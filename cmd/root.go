@@ -66,8 +66,11 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-struct-convert.yaml)")
 
-	rootCmd.PersistentFlags().StringVarP(&file, "file", "f", "", "input file")
-	rootCmd.MarkPersistentFlagRequired("file")
+	rootCmd.PersistentFlags().StringVarP(&file, "src", "s", "", "source struct")
+	rootCmd.MarkPersistentFlagRequired("src")
+
+	rootCmd.PersistentFlags().StringVarP(&file, "dst", "d", "", "destination struct")
+	rootCmd.MarkPersistentFlagRequired("dst")
 
 	rootCmd.PersistentFlags().StringVarP(&outFile, "out-file", "o", "", "output file (default is [file]_generated.go)")
 
