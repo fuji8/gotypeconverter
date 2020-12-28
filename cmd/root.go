@@ -17,14 +17,20 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
+
+var (
+	file    string
+	outFile string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -36,9 +42,10 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("hello world!, %v\n", args)
+		fmt.Println(file)
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -58,6 +65,11 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-struct-convert.yaml)")
+
+	rootCmd.PersistentFlags().StringVarP(&file, "file", "f", "", "input file")
+	rootCmd.MarkPersistentFlagRequired("file")
+
+	rootCmd.PersistentFlags().StringVarP(&outFile, "out-file", "o", "", "output file (default is [file]_generated.go)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
