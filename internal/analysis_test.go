@@ -4,7 +4,7 @@ import "testing"
 
 const testDataDir = "../testdata"
 
-func Test_parse(t *testing.T) {
+func Test_print(t *testing.T) {
 	type args struct {
 		filename string
 	}
@@ -23,7 +23,7 @@ func Test_parse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := parse(tt.args.filename); (err != nil) != tt.wantErr {
+			if err := print(tt.args.filename); (err != nil) != tt.wantErr {
 				t.Errorf("parse() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

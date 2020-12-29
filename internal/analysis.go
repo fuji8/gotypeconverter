@@ -7,7 +7,7 @@ import (
 	"go/token"
 )
 
-func parse(filename string) error {
+func print(filename string) error {
 	fset := token.NewFileSet()
 
 	var node ast.Node
