@@ -69,7 +69,7 @@ func TestGenerator_Generate(t *testing.T) {
 				dst: tt.fields.dst,
 			}
 			g.Init(testDataDir + "/normal.go")
-			if err := g.Generate(tt.args.srcStructName, tt.args.dstStructName); (err != nil) != tt.wantErr {
+			if _, err := g.Generate(tt.args.srcStructName, tt.args.dstStructName); (err != nil) != tt.wantErr {
 				t.Errorf("Generator.Generate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

@@ -17,7 +17,11 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
+
+	"github.com/fuji8/go-struct-convert/internal"
 
 	"github.com/spf13/cobra"
 
@@ -28,8 +32,9 @@ import (
 var cfgFile string
 
 var (
-	file    string
-	outFile string
+	file     string
+	src, dst string
+	outFile  string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -43,8 +48,24 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("hello world!, %v\n", args)
-		fmt.Println(file)
+		g := new(internal.Generator)
+		g.Init(file)
+
+		data, err := g.Generate(src, dst)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			return
+		}
+
+		if outFile == "" {
+			outFile = strings.Split(file, ".")[0]
+			outFile += "_generated.go"
+		}
+		err = ioutil.WriteFile(outFile, data, 0644)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			return
+		}
 	},
 }
 
@@ -66,11 +87,14 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-struct-convert.yaml)")
 
-	rootCmd.PersistentFlags().StringVarP(&file, "src", "s", "", "source struct")
+	rootCmd.PersistentFlags().StringVarP(&src, "src", "s", "", "source struct")
 	rootCmd.MarkPersistentFlagRequired("src")
 
-	rootCmd.PersistentFlags().StringVarP(&file, "dst", "d", "", "destination struct")
+	rootCmd.PersistentFlags().StringVarP(&dst, "dst", "d", "", "destination struct")
 	rootCmd.MarkPersistentFlagRequired("dst")
+
+	rootCmd.PersistentFlags().StringVarP(&file, "file", "f", "", "input file")
+	rootCmd.MarkPersistentFlagRequired("file")
 
 	rootCmd.PersistentFlags().StringVarP(&outFile, "out-file", "o", "", "output file (default is [file]_generated.go)")
 
