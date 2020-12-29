@@ -24,7 +24,7 @@ func Test_print(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := print(tt.args.filename); (err != nil) != tt.wantErr {
-				t.Errorf("parse() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("print() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
