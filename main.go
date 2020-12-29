@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/fuji8/go-struct-convert/cmd"
+import "github.com/fuji8/goconvertstruct/cmd"
 
 func main() {
 	cmd.Execute()

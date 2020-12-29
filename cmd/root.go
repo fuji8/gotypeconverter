@@ -21,7 +21,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fuji8/go-struct-convert/internal"
+	"github.com/fuji8/goconvertstruct/internal"
 
 	"github.com/spf13/cobra"
 
@@ -39,7 +39,7 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "go-struct-convert",
+	Use:   "goconvertstruct",
 	Short: "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
@@ -85,7 +85,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-struct-convert.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.goconvertstruct.yaml)")
 
 	rootCmd.PersistentFlags().StringVarP(&src, "src", "s", "", "source struct")
 	rootCmd.MarkPersistentFlagRequired("src")
@@ -116,9 +116,9 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".go-struct-convert" (without extension).
+		// Search config in home directory with name ".goconvertstruct" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".go-struct-convert")
+		viper.SetConfigName(".goconvertstruct")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

@@ -1,4 +1,4 @@
-module github.com/fuji8/go-struct-convert
+module github.com/fuji8/goconvertstruct
 
 go 1.15
 
