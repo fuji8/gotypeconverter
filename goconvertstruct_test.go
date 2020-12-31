@@ -18,6 +18,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestGenerator(t *testing.T) {
-	rs := codegentest.Run(t, codegentest.TestData(), goconvertstruct.Generator, "a")
+	goconvertstruct.FlagSrc = "a"
+	goconvertstruct.FlagDst = "b"
+
+	rs := codegentest.Run(t, codegentest.TestData(), goconvertstruct.Generator, "normal")
 	codegentest.Golden(t, rs, flagUpdate)
 }

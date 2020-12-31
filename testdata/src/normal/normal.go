@@ -1,4 +1,4 @@
-package main
+package normal
 
 type a struct {
 	x string
