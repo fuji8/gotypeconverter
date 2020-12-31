@@ -19,7 +19,6 @@ jobs:
     - name: Test
       run: |
         go mod tidy -v
-        cd internal
-        go test -race ./...
+        go test -race .
     - name: Build
-      run: go build main.go
+      run: go build cmd/goconvertsruct/main.go
