@@ -21,4 +21,4 @@ jobs:
         go mod tidy -v
         go test -race .
     - name: Build
-      run: go build cmd/goconvertsruct/main.go
+      run: go build cmd/goconvertstruct/main.go
