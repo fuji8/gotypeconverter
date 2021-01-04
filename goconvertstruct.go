@@ -1,11 +1,12 @@
 package goconvertstruct
 
 import (
+	"bytes"
 	"fmt"
+	"go/ast"
 	"go/format"
 	"os"
 
-	"github.com/fuji8/goconvertstruct/internal"
 	"github.com/gostaticanalysis/codegen"
 )
 
@@ -30,22 +31,29 @@ var Generator = &codegen.Generator{
 }
 
 func run(pass *codegen.Pass) error {
-	g := new(internal.Generator)
-	var data []byte
+	var buf bytes.Buffer
 
+	var srcS, dstS *ast.TypeSpec
 	for _, f := range pass.Files {
-		g.Init(f)
-		var err error
-		data, err = g.Generate(FlagSrc, FlagDst)
-		if err != nil {
-			return err
-		}
-
-		// TODO
-		break
+		ast.Inspect(f, func(n ast.Node) bool {
+			if ts, ok := n.(*ast.TypeSpec); ok {
+				switch ts.Name.Name {
+				case FlagSrc:
+					srcS = ts
+				case FlagDst:
+					dstS = ts
+				}
+			}
+			return true
+		})
 	}
 
-	src, err := format.Source(data)
+	s, _ := srcS.Type.(*ast.StructType)
+	fi := s.Fields.List[0]
+	fmt.Println(pass.TypesInfo.TypeOf(fi.Type))
+	fmt.Println(dstS)
+
+	src, err := format.Source(buf.Bytes())
 	if err != nil {
 		return err
 	}
