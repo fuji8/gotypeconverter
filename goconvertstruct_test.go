@@ -7,6 +7,7 @@ import (
 
 	"github.com/fuji8/goconvertstruct"
 	"github.com/gostaticanalysis/codegen/codegentest"
+	"github.com/stretchr/testify/assert"
 )
 
 var flagUpdate bool
@@ -22,6 +23,7 @@ func TestGenerator(t *testing.T) {
 	goconvertstruct.FlagDst = "b"
 
 	rs := codegentest.Run(t, "/home/fuji/go", goconvertstruct.Generator, "../workspace/tools/goconvertstruct/testdata/src/normal")
+	assert.Equal(t, 1, len(rs))
 	rs[0].Dir = "/home/fuji/workspace/tools/goconvertstruct/testdata/src/normal"
 	codegentest.Golden(t, rs, flagUpdate)
 }
