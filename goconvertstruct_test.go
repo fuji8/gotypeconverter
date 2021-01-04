@@ -21,6 +21,7 @@ func TestGenerator(t *testing.T) {
 	goconvertstruct.FlagSrc = "a"
 	goconvertstruct.FlagDst = "b"
 
-	rs := codegentest.Run(t, codegentest.TestData(), goconvertstruct.Generator, "normal")
+	rs := codegentest.Run(t, "/home/fuji/go", goconvertstruct.Generator, "../workspace/tools/goconvertstruct/testdata/src/normal")
+	rs[0].Dir = "/home/fuji/workspace/tools/goconvertstruct/testdata/src/normal"
 	codegentest.Golden(t, rs, flagUpdate)
 }
