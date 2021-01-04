@@ -52,6 +52,7 @@ func run(pass *codegen.Pass) error {
 	fi := s.Fields.List[0]
 	fmt.Println(pass.TypesInfo.TypeOf(fi.Type))
 	fmt.Println(dstS)
+	fmt.Fprintln(&buf, pass.TypesInfo.TypeOf(fi.Type))
 
 	src, err := format.Source(buf.Bytes())
 	if err != nil {
