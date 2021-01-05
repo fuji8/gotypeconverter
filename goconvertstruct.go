@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/format"
+	"go/types"
 	"os"
 
 	"github.com/gostaticanalysis/codegen"
@@ -33,26 +34,48 @@ var Generator = &codegen.Generator{
 func run(pass *codegen.Pass) error {
 	var buf bytes.Buffer
 
-	var srcS, dstS *ast.TypeSpec
+	// ASTを探索
+	var srcAST, dstAST *ast.TypeSpec
 	for _, f := range pass.Files {
+		ast.Inspect(f, func(n ast.Node) bool {
+			ast.Print(pass.Fset, n)
+			fmt.Println() // \n したい...
+			return false
+		})
+
 		ast.Inspect(f, func(n ast.Node) bool {
 			if ts, ok := n.(*ast.TypeSpec); ok {
 				switch ts.Name.Name {
 				case FlagSrc:
-					srcS = ts
+					if _, ok := ts.Type.(*ast.StructType); ok {
+						srcAST = ts
+					}
 				case FlagDst:
-					dstS = ts
+					if _, ok := ts.Type.(*ast.StructType); ok {
+						dstAST = ts
+					}
 				}
 			}
 			return true
 		})
+		if srcAST != nil && dstAST != nil {
+			break
+		}
 	}
 
-	s, _ := srcS.Type.(*ast.StructType)
-	fi := s.Fields.List[0]
-	fmt.Println(pass.TypesInfo.TypeOf(fi.Type))
-	fmt.Println(dstS)
-	fmt.Fprintln(&buf, pass.TypesInfo.TypeOf(fi.Type))
+	fmt.Println(srcAST, dstAST)
+	srcType := pass.TypesInfo.TypeOf(srcAST.Type)
+	dstType := pass.TypesInfo.TypeOf(dstAST.Type)
+	// 生成
+	makeFunc(dstType, srcType, "dst", "src")
+
+	// s, _ := srcS.Type.(*ast.StructType)
+	// fi := s.Fields.List[0]
+	// fmt.Println(pass.TypesInfo.TypeOf(fi.Type).Underlying().String())
+	// fmt.Println(pass.TypesInfo.ObjectOf(fi.Type.(*ast.Ident)).Type().Underlying())
+	// fmt.Printf("%T\n", pass.TypesInfo.TypeOf(fi.Type).Underlying())
+	// fmt.Println(dstS)
+	// fmt.Fprintln(&buf, pass.TypesInfo.TypeOf(fi.Type))
 
 	src, err := format.Source(buf.Bytes())
 	if err != nil {
@@ -76,4 +99,59 @@ func run(pass *codegen.Pass) error {
 	}
 
 	return nil
+}
+
+func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
+	if types.Identical(dst, src) {
+		// same
+		fmt.Printf("%s = %s\n", dstSelector, srcSelector)
+		return true
+	}
+
+	switch dstT := dst.(type) {
+	case *types.Basic:
+
+		switch srcT := src.(type) {
+		case *types.Struct:
+			for j := 0; j < srcT.NumFields(); j++ {
+				written := makeFunc(dstT, srcT.Field(j).Type(),
+					dstSelector,
+					fmt.Sprintf("%s.%s", srcSelector, srcT.Field(j).Name()),
+				)
+				if written {
+					return true
+				}
+			}
+
+		}
+	case *types.Array:
+
+	case *types.Struct:
+		switch srcT := src.(type) {
+		case *types.Basic:
+			for i := 0; i < dstT.NumFields(); i++ {
+				written := makeFunc(dstT.Field(i).Type(), srcT,
+					fmt.Sprintf("%s.%s", dstSelector, dstT.Field(i).Name()),
+					srcSelector,
+				)
+				if written {
+					return true
+				}
+
+			}
+		case *types.Struct:
+			for i := 0; i < dstT.NumFields(); i++ {
+				for j := 0; j < srcT.NumFields(); j++ {
+					if dstT.Field(i).Name() == srcT.Field(j).Name() {
+						makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
+							fmt.Sprintf("%s.%s", dstSelector, dstT.Field(i).Name()),
+							fmt.Sprintf("%s.%s", srcSelector, srcT.Field(j).Name()),
+						)
+					}
+				}
+			}
+
+		}
+	}
+	return false
 }
