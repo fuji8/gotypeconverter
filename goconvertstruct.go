@@ -101,6 +101,13 @@ func run(pass *codegen.Pass) error {
 	return nil
 }
 
+func selectorGen(selector string, field *types.Var) string {
+	if field.Embedded() {
+		return selector
+	}
+	return fmt.Sprintf("%s.%s", selector, field.Name())
+}
+
 func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 	if types.Identical(dst, src) {
 		// same
@@ -141,6 +148,13 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 			}
 		case *types.Struct:
 			for i := 0; i < dstT.NumFields(); i++ {
+				if dstT.Field(i).Embedded() {
+					makeFunc(dstT.Field(i).Type(), srcT,
+						fmt.Sprintf("%s.%s", dstSelector, dstT.Field(i).Name()),
+						srcSelector,
+					)
+					continue
+				}
 				for j := 0; j < srcT.NumFields(); j++ {
 					if dstT.Field(i).Name() == srcT.Field(j).Name() {
 						makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
@@ -152,6 +166,8 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 			}
 
 		}
+	case *types.Named:
+		makeFunc(dstT.Underlying(), src, dstSelector, srcSelector)
 	}
 	return false
 }
