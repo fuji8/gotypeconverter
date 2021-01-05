@@ -2,7 +2,9 @@
 package normal
 
 func ConvertaTob(src a) (dst b) {
-	dst.x = src.x
+	dst.e.m = src.m
+	dst.e.x = src.x.A
+	dst.x = src.x.C
 	dst.y = src.y
 	dst.z = src.z
 	return
