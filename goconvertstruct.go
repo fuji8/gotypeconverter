@@ -40,12 +40,6 @@ func run(pass *codegen.Pass) error {
 	var srcAST, dstAST *ast.TypeSpec
 	for _, f := range pass.Files {
 		ast.Inspect(f, func(n ast.Node) bool {
-			ast.Print(pass.Fset, n)
-			fmt.Println() // \n したい...
-			return false
-		})
-
-		ast.Inspect(f, func(n ast.Node) bool {
 			if ts, ok := n.(*ast.TypeSpec); ok {
 				switch ts.Name.Name {
 				case FlagSrc:
@@ -65,7 +59,6 @@ func run(pass *codegen.Pass) error {
 		}
 	}
 
-	fmt.Println(srcAST, dstAST)
 	srcType := pass.TypesInfo.TypeOf(srcAST.Type)
 	dstType := pass.TypesInfo.TypeOf(dstAST.Type)
 	// 生成
@@ -110,9 +103,9 @@ func run(pass *codegen.Pass) error {
 }
 
 func selectorGen(selector string, field *types.Var) string {
-	if field.Embedded() {
-		return selector
-	}
+	//if field.Embedded() {
+	//return selector
+	//}
 	return fmt.Sprintf("%s.%s", selector, field.Name())
 }
 
@@ -183,7 +176,7 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 			}
 		} else if srcT, ok := src.(*types.Struct); ok {
 			for j := 0; j < srcT.NumFields(); j++ {
-				written := makeFunc(dstT, srcT.Field(j).Type(),
+				written := makeFunc(dst, srcT.Field(j).Type(),
 					dstSelector,
 					fmt.Sprintf("%s.%s", srcSelector, srcT.Field(j).Name()),
 				)
@@ -202,6 +195,9 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 	} else {
 		dstT, dstSelector := typeStep(dst, dstSelector)
 		srcT, srcSelector := typeStep(src, srcSelector)
+		if dstT == nil || srcT == nil {
+			return false
+		}
 		return makeFunc(dstT, srcT, dstSelector, srcSelector)
 	}
 	return false
