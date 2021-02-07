@@ -2,6 +2,7 @@ package goconvertstruct_test
 
 import (
 	"flag"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -18,9 +19,17 @@ func TestMain(m *testing.M) {
 }
 
 func TestGenerator(t *testing.T) {
-	goconvertstruct.FlagSrc = "a"
-	goconvertstruct.FlagDst = "b"
 
-	rs := codegentest.Run(t, codegentest.TestData(), goconvertstruct.Generator, "normal")
-	codegentest.Golden(t, rs, flagUpdate)
+	fileInfos, err := ioutil.ReadDir(codegentest.TestData() + "/src")
+	if err != nil {
+		panic(err)
+	}
+	for _, fi := range fileInfos {
+		if fi.IsDir() {
+			goconvertstruct.Generator.Flags.Set("s", "src")
+			goconvertstruct.Generator.Flags.Set("d", "dst")
+			rs := codegentest.Run(t, codegentest.TestData(), goconvertstruct.Generator, fi.Name())
+			codegentest.Golden(t, rs, flagUpdate)
+		}
+	}
 }
