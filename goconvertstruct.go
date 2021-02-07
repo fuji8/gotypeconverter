@@ -120,9 +120,8 @@ func typeStep(t types.Type, selector string) (types.Type, string) {
 	switch ty := t.(type) {
 	case *types.Named:
 		return ty.Underlying(), selector
-	case *types.Struct:
-
 	}
+	return nil, ""
 }
 
 func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
@@ -134,8 +133,8 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 
 	dstRT := reflect.TypeOf(dst)
 	srcRT := reflect.TypeOf(src)
-	// same type
-	if dstRT.Kind() == srcRT.Kind() {
+	if dstRT.String() == srcRT.String() {
+		// same type
 		switch dst.(type) {
 		case *types.Struct:
 			dstT := dst.(*types.Struct)
@@ -164,20 +163,25 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 			srcT := src.(*types.Slice)
 
 			// TODO fix unique i, v
-			fmt.Fprintf(&buf, "%s = make(%s, len(%s))", dst.String(), srcSelector)
+			fmt.Fprintf(&buf, "%s = make(%s, len(%s))", dstSelector, dst.String(), srcSelector)
 			fmt.Fprintf(&buf, "for i, v := range %s {\n", srcSelector)
 			makeFunc(dstT.Elem(), srcT.Elem(),
 				dstSelector+"[i]",
 				srcSelector+"[i]")
 			fmt.Fprintf(&buf, "}\n")
 		}
-	}
-
-	switch dstT := dst.(type) {
-	case *types.Basic:
-
-		switch srcT := src.(type) {
-		case *types.Struct:
+	} else if dstRT.String() == "*types.Struct" || srcRT.String() == "*types.Struct" {
+		if dstT, ok := dst.(*types.Struct); ok {
+			for i := 0; i < dstT.NumFields(); i++ {
+				if dstT.Field(i).Embedded() {
+					makeFunc(dstT.Field(i).Type(), src,
+						fmt.Sprintf("%s.%s", dstSelector, dstT.Field(i).Name()),
+						srcSelector,
+					)
+					continue
+				}
+			}
+		} else if srcT, ok := src.(*types.Struct); ok {
 			for j := 0; j < srcT.NumFields(); j++ {
 				written := makeFunc(dstT, srcT.Field(j).Type(),
 					dstSelector,
@@ -187,45 +191,18 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 					return true
 				}
 			}
-
 		}
-	case *types.Array:
-
-	case *types.Struct:
-		switch srcT := src.(type) {
-		case *types.Basic:
-			for i := 0; i < dstT.NumFields(); i++ {
-				written := makeFunc(dstT.Field(i).Type(), srcT,
-					fmt.Sprintf("%s.%s", dstSelector, dstT.Field(i).Name()),
-					srcSelector,
-				)
-				if written {
-					return true
-				}
-
-			}
-		case *types.Struct:
-			for i := 0; i < dstT.NumFields(); i++ {
-				if dstT.Field(i).Embedded() {
-					makeFunc(dstT.Field(i).Type(), srcT,
-						fmt.Sprintf("%s.%s", dstSelector, dstT.Field(i).Name()),
-						srcSelector,
-					)
-					continue
-				}
-				for j := 0; j < srcT.NumFields(); j++ {
-					if dstT.Field(i).Name() == srcT.Field(j).Name() {
-						makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
-							fmt.Sprintf("%s.%s", dstSelector, dstT.Field(i).Name()),
-							fmt.Sprintf("%s.%s", srcSelector, srcT.Field(j).Name()),
-						)
-					}
-				}
-			}
-
+	} else if dstRT.String() == "*types.Slice" || srcRT.String() == "*types.Slice" {
+		if dstT, ok := dst.(*types.Slice); ok {
+			fmt.Fprintf(&buf, "%s = make(%s, 1)", dstSelector, dst.String())
+			return makeFunc(dstT.Elem(), src, dstSelector+"[0]", srcSelector)
+		} else if srcT, ok := src.(*types.Slice); ok {
+			return makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]")
 		}
-	case *types.Named:
-		makeFunc(dstT.Underlying(), src, dstSelector, srcSelector)
+	} else {
+		dstT, dstSelector := typeStep(dst, dstSelector)
+		srcT, srcSelector := typeStep(src, srcSelector)
+		return makeFunc(dstT, srcT, dstSelector, srcSelector)
 	}
 	return false
 }
