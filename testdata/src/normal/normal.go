@@ -6,7 +6,7 @@ type e struct {
 	x int
 }
 
-type src struct {
+type normalSrc struct {
 	x struct {
 		A int
 		B bool
@@ -18,7 +18,7 @@ type src struct {
 	m string
 }
 
-type dst struct {
+type normalDst struct {
 	e
 	x string
 	y int

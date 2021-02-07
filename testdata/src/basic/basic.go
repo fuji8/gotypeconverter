@@ -1,13 +1,13 @@
 package basic
 
-type src struct {
+type basicSrc struct {
 	foo int
 	bar float64
 	x   string
 	y   string
 }
 
-type dst struct {
+type basicDst struct {
 	foo int
 	bar float32
 	x   string
