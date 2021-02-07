@@ -1,8 +1,4 @@
-package normal
-
-import (
-	"fmt"
-)
+package main
 
 type e struct {
 	e bool
@@ -11,8 +7,7 @@ type e struct {
 }
 
 type a struct {
-	e2 e
-	x  struct {
+	x struct {
 		A int
 		B bool
 		C string `cvt:""`
@@ -31,5 +26,16 @@ type b struct {
 }
 
 func main() {
-	fmt.Println("hello, world")
+	//src := a{
+	//e2: e{
+	//e: false,
+	//m: "fooo",
+	//x: 100,
+	//},
+	//y: 99,
+	//z: 3.14,
+	//m: "emmmmm",
+	//}
+	//src.x.C = "ccccc"
+	//fmt.Println(ConvertaTob(src))
 }

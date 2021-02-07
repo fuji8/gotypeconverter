@@ -124,6 +124,9 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 		return true
 	}
 
+	dst, dstSelector = typeStep(dst, dstSelector)
+	src, srcSelector = typeStep(src, srcSelector)
+
 	dstRT := reflect.TypeOf(dst)
 	srcRT := reflect.TypeOf(src)
 	if dstRT.String() == srcRT.String() {
@@ -194,13 +197,6 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 		} else if srcT, ok := src.(*types.Slice); ok {
 			return makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]")
 		}
-	} else {
-		dstT, dstSelector := typeStep(dst, dstSelector)
-		srcT, srcSelector := typeStep(src, srcSelector)
-		if dstT == nil || srcT == nil {
-			return false
-		}
-		return makeFunc(dstT, srcT, dstSelector, srcSelector)
 	}
 	return false
 }
