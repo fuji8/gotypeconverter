@@ -114,7 +114,7 @@ func typeStep(t types.Type, selector string) (types.Type, string) {
 	case *types.Named:
 		return ty.Underlying(), selector
 	}
-	return nil, ""
+	return t, selector
 }
 
 func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
@@ -135,7 +135,7 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 
 			for i := 0; i < dstT.NumFields(); i++ {
 				if dstT.Field(i).Embedded() {
-					makeFunc(dstT.Field(i).Type(), srcT,
+					makeFunc(dstT.Field(i).Type(), src,
 						selectorGen(dstSelector, dstT.Field(i)),
 						srcSelector,
 					)
@@ -167,11 +167,13 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 		if dstT, ok := dst.(*types.Struct); ok {
 			for i := 0; i < dstT.NumFields(); i++ {
 				if dstT.Field(i).Embedded() {
-					makeFunc(dstT.Field(i).Type(), src,
+					written := makeFunc(dstT.Field(i).Type(), src,
 						fmt.Sprintf("%s.%s", dstSelector, dstT.Field(i).Name()),
 						srcSelector,
 					)
-					continue
+					if written {
+						return true
+					}
 				}
 			}
 		} else if srcT, ok := src.(*types.Struct); ok {
