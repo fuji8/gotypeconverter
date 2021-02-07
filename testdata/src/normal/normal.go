@@ -1,4 +1,4 @@
-package main
+package normal
 
 type e struct {
 	e bool
@@ -6,7 +6,7 @@ type e struct {
 	x int
 }
 
-type normalSRC struct {
+type src struct {
 	x struct {
 		A int
 		B bool
@@ -18,7 +18,7 @@ type normalSRC struct {
 	m string
 }
 
-type normalDST struct {
+type dst struct {
 	e
 	x string
 	y int
@@ -26,4 +26,5 @@ type normalDST struct {
 }
 
 func main() {
+
 }

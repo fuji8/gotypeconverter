@@ -26,10 +26,10 @@ func TestGenerator(t *testing.T) {
 	}
 	for _, fi := range fileInfos {
 		if fi.IsDir() {
-			goconvertstruct.Generator.Flags.Set("s", fi.Name()+"SRC")
-			goconvertstruct.Generator.Flags.Set("d", fi.Name()+"DST")
+			goconvertstruct.Generator.Flags.Set("s", "src")
+			goconvertstruct.Generator.Flags.Set("d", "dst")
 			rs := codegentest.Run(t, codegentest.TestData(), goconvertstruct.Generator, fi.Name())
-			codegentest.Golden(t, rs, flagUpdate)
+			codegentest.Golden(t, rs, true)
 		}
 	}
 }

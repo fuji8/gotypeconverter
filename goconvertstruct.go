@@ -35,6 +35,7 @@ var Generator = &codegen.Generator{
 var buf bytes.Buffer
 
 func run(pass *codegen.Pass) error {
+	buf = bytes.Buffer{}
 
 	// ASTを探索
 	var srcAST, dstAST *ast.TypeSpec
