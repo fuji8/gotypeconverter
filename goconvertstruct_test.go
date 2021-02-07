@@ -29,7 +29,7 @@ func TestGenerator(t *testing.T) {
 			goconvertstruct.Generator.Flags.Set("s", "src")
 			goconvertstruct.Generator.Flags.Set("d", "dst")
 			rs := codegentest.Run(t, codegentest.TestData(), goconvertstruct.Generator, fi.Name())
-			codegentest.Golden(t, rs, true)
+			codegentest.Golden(t, rs, flagUpdate)
 		}
 	}
 }
