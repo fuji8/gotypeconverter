@@ -6,7 +6,7 @@ type e struct {
 	x int
 }
 
-type a struct {
+type normalSRC struct {
 	x struct {
 		A int
 		B bool
@@ -18,7 +18,7 @@ type a struct {
 	m string
 }
 
-type b struct {
+type normalDST struct {
 	e
 	x string
 	y int
@@ -26,16 +26,4 @@ type b struct {
 }
 
 func main() {
-	//src := a{
-	//e2: e{
-	//e: false,
-	//m: "fooo",
-	//x: 100,
-	//},
-	//y: 99,
-	//z: 3.14,
-	//m: "emmmmm",
-	//}
-	//src.x.C = "ccccc"
-	//fmt.Println(ConvertaTob(src))
 }
