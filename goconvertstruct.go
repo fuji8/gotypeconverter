@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"go/types"
 	"os"
+	"reflect"
 
 	"github.com/gostaticanalysis/codegen"
 )
@@ -115,11 +116,61 @@ func selectorGen(selector string, field *types.Var) string {
 	return fmt.Sprintf("%s.%s", selector, field.Name())
 }
 
+func typeStep(t types.Type, selector string) (types.Type, string) {
+	switch ty := t.(type) {
+	case *types.Named:
+		return ty.Underlying(), selector
+	case *types.Struct:
+
+	}
+}
+
 func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 	if types.Identical(dst, src) {
 		// same
 		fmt.Fprintf(&buf, "%s = %s\n", dstSelector, srcSelector)
 		return true
+	}
+
+	dstRT := reflect.TypeOf(dst)
+	srcRT := reflect.TypeOf(src)
+	// same type
+	if dstRT.Kind() == srcRT.Kind() {
+		switch dst.(type) {
+		case *types.Struct:
+			dstT := dst.(*types.Struct)
+			srcT := src.(*types.Struct)
+
+			for i := 0; i < dstT.NumFields(); i++ {
+				if dstT.Field(i).Embedded() {
+					makeFunc(dstT.Field(i).Type(), srcT,
+						selectorGen(dstSelector, dstT.Field(i)),
+						srcSelector,
+					)
+					continue
+				}
+				for j := 0; j < srcT.NumFields(); j++ {
+					if dstT.Field(i).Name() == srcT.Field(j).Name() {
+						makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
+							selectorGen(dstSelector, dstT.Field(i)),
+							selectorGen(srcSelector, srcT.Field(j)),
+						)
+					}
+				}
+			}
+		// case *types.Array:
+		case *types.Slice:
+			dstT := dst.(*types.Slice)
+			srcT := src.(*types.Slice)
+
+			// TODO fix unique i, v
+			fmt.Fprintf(&buf, "%s = make(%s, len(%s))", dst.String(), srcSelector)
+			fmt.Fprintf(&buf, "for i, v := range %s {\n", srcSelector)
+			makeFunc(dstT.Elem(), srcT.Elem(),
+				dstSelector+"[i]",
+				srcSelector+"[i]")
+			fmt.Fprintf(&buf, "}\n")
+		}
 	}
 
 	switch dstT := dst.(type) {
