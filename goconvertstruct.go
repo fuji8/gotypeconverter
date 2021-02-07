@@ -156,7 +156,7 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 
 			// TODO fix unique i, v
 			fmt.Fprintf(&buf, "%s = make(%s, len(%s))\n", dstSelector, dst.String(), srcSelector)
-			fmt.Fprintf(&buf, "for i, v := range %s {\n", srcSelector)
+			fmt.Fprintf(&buf, "for i, _ := range %s {\n", srcSelector)
 			makeFunc(dstT.Elem(), srcT.Elem(),
 				dstSelector+"[i]",
 				srcSelector+"[i]")
