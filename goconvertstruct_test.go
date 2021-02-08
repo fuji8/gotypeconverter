@@ -28,6 +28,7 @@ func TestGenerator(t *testing.T) {
 		if fi.IsDir() {
 			goconvertstruct.Generator.Flags.Set("s", fi.Name()+"Src")
 			goconvertstruct.Generator.Flags.Set("d", fi.Name()+"Dst")
+			goconvertstruct.CreateTmpFile(codegentest.TestData() + "/src/" + fi.Name())
 			rs := codegentest.Run(t, codegentest.TestData(), goconvertstruct.Generator, fi.Name())
 			codegentest.Golden(t, rs, flagUpdate)
 		}

@@ -8,6 +8,7 @@ import (
 	"go/types"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/gostaticanalysis/codegen"
 )
@@ -20,6 +21,8 @@ var (
 	flagSrc, flagDst string
 	// ImportPkg 解析に必要なためのpkg
 	ImportPkg string
+
+	tmpFilePath string
 )
 
 func init() {
@@ -29,6 +32,20 @@ func init() {
 	Generator.Flags.StringVar(&ImportPkg, "import", "hello", "import pkg")
 }
 
+func CreateTmpFile(path string) {
+	tmpFilePath = path + "/tmp-001.go"
+	f, err := os.Create(tmpFilePath)
+	if err != nil {
+		panic(err)
+	}
+	t := strings.Split(path, "/")
+	pkg := t[len(t)-1]
+
+	f.WriteString(fmt.Sprintf("package %s\n", pkg))
+	f.WriteString("import \"fmt\"\n")
+	f.WriteString(fmt.Sprintf("func unique(){fmt.Println(%s{},%s{})}\n", flagSrc, flagDst))
+}
+
 // Init 解析のための一時ファイルを作成する
 func Init() {
 	err := Generator.Flags.Parse(os.Args[1:])
@@ -36,14 +53,8 @@ func Init() {
 		panic(err)
 	}
 
-	pkg := os.Args[len(os.Args)-1]
-	f, err := os.Create(pkg + "/tmp-001.go")
-	if err != nil {
-		panic(err)
-	}
-	f.WriteString("package basic\n")
-	f.WriteString("import \"fmt\"\n")
-	f.WriteString("func unique(){fmt.Println(basicSrc{},basicDst{})}\n")
+	path := os.Args[len(os.Args)-1]
+	CreateTmpFile(path)
 }
 
 var Generator = &codegen.Generator{
@@ -60,8 +71,7 @@ func run(pass *codegen.Pass) error {
 
 	// delete tmp file
 	defer func() {
-		pkg := os.Args[len(os.Args)-1]
-		os.Remove(pkg + "/tmp-001.go")
+		os.Remove(tmpFilePath)
 	}()
 
 	var srcAST, dstAST *ast.Ident
