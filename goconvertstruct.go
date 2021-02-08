@@ -175,7 +175,7 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 			for i := 0; i < dstT.NumFields(); i++ {
 				if dstT.Field(i).Embedded() {
 					written := makeFunc(dstT.Field(i).Type(), src,
-						fmt.Sprintf("%s.%s", dstSelector, dstT.Field(i).Name()),
+						selectorGen(dstSelector, dstT.Field(i)),
 						srcSelector,
 					)
 					if written {
@@ -187,7 +187,7 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 			for j := 0; j < srcT.NumFields(); j++ {
 				written := makeFunc(dst, srcT.Field(j).Type(),
 					dstSelector,
-					fmt.Sprintf("%s.%s", srcSelector, srcT.Field(j).Name()),
+					selectorGen(srcSelector, srcT.Field(j)),
 				)
 				if written {
 					return true
