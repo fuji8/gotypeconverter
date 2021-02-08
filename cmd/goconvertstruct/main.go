@@ -7,5 +7,6 @@ import (
 )
 
 func main() {
-	singlegenerator.Main(goconvertstruct.Generator)
+	goconvertstruct.Init()
+	singlegenerator.Main(goconvertstruct.Generator) // os.Exit
 }
