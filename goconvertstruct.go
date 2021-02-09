@@ -6,11 +6,14 @@ import (
 	"go/ast"
 	"go/format"
 	"go/types"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
 	"github.com/gostaticanalysis/codegen"
+	"golang.org/x/tools/imports"
 )
 
 const doc = "goconvertstruct is ..."
@@ -19,8 +22,8 @@ var (
 	flagOutput string
 
 	flagSrc, flagDst string
-	// ImportPkg 解析に必要なためのpkg
-	ImportPkg string
+	// flagImportPkg 解析に必要なためのpkg
+	flagImportPkg string
 
 	tmpFilePath string
 )
@@ -29,22 +32,28 @@ func init() {
 	Generator.Flags.StringVar(&flagOutput, "o", "", "output file name")
 	Generator.Flags.StringVar(&flagSrc, "s", "", "source struct")
 	Generator.Flags.StringVar(&flagDst, "d", "", "destination struct")
-	Generator.Flags.StringVar(&ImportPkg, "import", "hello", "import pkg")
+	Generator.Flags.StringVar(&flagImportPkg, "import", "hello", "import pkg")
 }
 
 func CreateTmpFile(path string) {
 	tmpFilePath = path + "/tmp-001.go"
-	f, err := os.Create(tmpFilePath)
+	pkg := filepath.Base(path)
+
+	src := fmt.Sprintf("package %s\n", pkg)
+	src += fmt.Sprintf("func unique(){fmt.Println(%s{},%s{})}\n", flagSrc, flagDst)
+
+	// goimports do not imports from go.mod
+	res, err := imports.Process(tmpFilePath, []byte(src), &imports.Options{
+		Fragment: true,
+	})
 	if err != nil {
 		panic(err)
 	}
-	t := strings.Split(path, "/")
-	pkg := t[len(t)-1]
+	err = ioutil.WriteFile(tmpFilePath, res, 0755)
+	if err != nil {
+		panic(err)
+	}
 
-	f.WriteString(fmt.Sprintf("package %s\n", pkg))
-	f.WriteString("import \"fmt\"\n")
-	f.WriteString("import \"github.com/labstack/echo/v4\"\n")
-	f.WriteString(fmt.Sprintf("func unique(){fmt.Println(%s{},%s{})}\n", flagSrc, flagDst))
 }
 
 // Init 解析のための一時ファイルを作成する
@@ -122,6 +131,13 @@ func run(pass *codegen.Pass) error {
 	src, err := format.Source(buf.Bytes())
 	if err != nil {
 		fmt.Println("format error:" + buf.String())
+		return err
+	}
+	src, err = imports.Process(tmpFilePath, src, &imports.Options{
+		Fragment: true,
+		Comments: true,
+	})
+	if err != nil {
 		return err
 	}
 

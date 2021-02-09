@@ -38,7 +38,7 @@ func TestGenerator(t *testing.T) {
 		panic(err)
 	}
 	for _, fi := range fileInfos {
-		if fi.IsDir() && fi.Name() == "external" {
+		if fi.IsDir() {
 			fv, ok := m[fi.Name()]
 			if !ok {
 				goconvertstruct.Generator.Flags.Set("s", fi.Name()+"Src")

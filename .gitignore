@@ -3,3 +3,4 @@ main
 *_generated.go
 
 vendor
+.vscode
