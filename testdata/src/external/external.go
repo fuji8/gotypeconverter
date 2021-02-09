@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo"
 )
 
 type externalDst struct {
