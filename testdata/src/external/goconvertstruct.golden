@@ -5,6 +5,5 @@ import "github.com/labstack/echo"
 
 func ConvertEchoToexternalDst(src echo.Echo) (dst externalDst) {
 	dst.Debug = src.Debug
-	dst.pool = src.pool
 	return
 }

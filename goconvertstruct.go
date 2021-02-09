@@ -26,6 +26,8 @@ var (
 	flagImportPkg string
 
 	tmpFilePath string
+
+	outPkg string
 )
 
 func init() {
@@ -117,6 +119,8 @@ func run(pass *codegen.Pass) error {
 		}
 	}
 
+	outPkg = pass.Pkg.Name()
+
 	srcType := pass.TypesInfo.TypeOf(srcAST)
 	dstType := pass.TypesInfo.TypeOf(dstAST)
 	// 生成
@@ -175,6 +179,13 @@ func typeStep(t types.Type, selector string) (types.Type, string) {
 	return t, selector
 }
 
+func pkgVisiable(field *types.Var) bool {
+	if outPkg == field.Pkg().Name() {
+		return true
+	}
+	return field.Exported()
+}
+
 func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 	if types.Identical(dst, src) {
 		// same
@@ -195,6 +206,9 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 			srcT := src.(*types.Struct)
 
 			for i := 0; i < dstT.NumFields(); i++ {
+				if !pkgVisiable(dstT.Field(i)) {
+					continue
+				}
 				if dstT.Field(i).Embedded() {
 					makeFunc(dstT.Field(i).Type(), src,
 						selectorGen(dstSelector, dstT.Field(i)),
@@ -203,7 +217,9 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 					continue
 				}
 				for j := 0; j < srcT.NumFields(); j++ {
-					// TODO fix
+					if !pkgVisiable(srcT.Field(j)) {
+						continue
+					}
 					if dstT.Field(i).Name() == srcT.Field(j).Name() {
 						makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
 							selectorGen(dstSelector, dstT.Field(i)),
