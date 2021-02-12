@@ -12,6 +12,7 @@ type sliceSrc struct {
 		foo string
 		bar int
 	}
+	hellos []string
 }
 
 type sliceDst struct {

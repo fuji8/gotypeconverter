@@ -308,16 +308,17 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 		case *types.Struct:
 			dstT := dst.(*types.Struct)
 			srcT := src.(*types.Struct)
+			written := false
 
 			for i := 0; i < dstT.NumFields(); i++ {
 				if !fm.pkgVisiable(dstT.Field(i)) {
 					continue
 				}
 				if dstT.Field(i).Embedded() {
-					fm.makeFunc(dstT.Field(i).Type(), src,
+					written = fm.makeFunc(dstT.Field(i).Type(), src,
 						selectorGen(dstSelector, dstT.Field(i)),
 						srcSelector,
-					)
+					) || written
 					continue
 				}
 				for j := 0; j < srcT.NumFields(); j++ {
@@ -325,25 +326,35 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 						continue
 					}
 					if dstT.Field(i).Name() == srcT.Field(j).Name() {
-						fm.makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
+						written = fm.makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
 							selectorGen(dstSelector, dstT.Field(i)),
 							selectorGen(srcSelector, srcT.Field(j)),
-						)
+						) || written
 					}
 				}
 			}
+			return written
 		// case *types.Array:
 		case *types.Slice:
 			dstT := dst.(*types.Slice)
 			srcT := src.(*types.Slice)
 
+			// TODO fix unused i
+			new := new(bytes.Buffer)
+			tmp := fm.buf.Bytes()
+			fm.buf = new
 			// TODO fix unique i, v
 			fmt.Fprintf(fm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
 			fmt.Fprintf(fm.buf, "for i, _ := range %s {\n", srcSelector)
-			fm.makeFunc(dstT.Elem(), srcT.Elem(),
+			written := fm.makeFunc(dstT.Elem(), srcT.Elem(),
 				dstSelector+"[i]",
 				srcSelector+"[i]")
 			fmt.Fprintf(fm.buf, "}\n")
+			fm.buf = bytes.NewBuffer(tmp)
+			if written {
+				fm.buf.Write(new.Bytes())
+			}
+			return written
 		}
 	} else if dstRT.String() == "*types.Slice" || srcRT.String() == "*types.Slice" {
 		if dstT, ok := dst.(*types.Slice); ok {
