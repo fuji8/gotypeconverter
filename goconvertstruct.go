@@ -190,6 +190,21 @@ func pkgVisiable(field *types.Var) bool {
 	return field.Exported()
 }
 
+func formatPkgType(t types.Type) string {
+	tmp := strings.Split(t.String(), "/")
+	last := tmp[(len(tmp) - 1)]
+	tmp = strings.Split(last, ".")
+	p := tmp[0]
+	var typ string
+	if len(tmp) == 2 {
+		typ = tmp[1]
+	}
+	if p == outPkg {
+		return typ
+	}
+	return last
+}
+
 func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 	if types.IdenticalIgnoreTags(dst, src) {
 		// same
@@ -238,7 +253,7 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 			srcT := src.(*types.Slice)
 
 			// TODO fix unique i, v
-			fmt.Fprintf(&buf, "%s = make(%s, len(%s))\n", dstSelector, dst.String(), srcSelector)
+			fmt.Fprintf(&buf, "%s = make(%s, len(%s))\n", dstSelector, formatPkgType(dst), srcSelector)
 			fmt.Fprintf(&buf, "for i, _ := range %s {\n", srcSelector)
 			makeFunc(dstT.Elem(), srcT.Elem(),
 				dstSelector+"[i]",
@@ -247,7 +262,7 @@ func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
 		}
 	} else if dstRT.String() == "*types.Slice" || srcRT.String() == "*types.Slice" {
 		if dstT, ok := dst.(*types.Slice); ok {
-			fmt.Fprintf(&buf, "%s = make(%s, 1)\n", dstSelector, dst.String())
+			fmt.Fprintf(&buf, "%s = make(%s, 1)\n", dstSelector, formatPkgType(dst))
 			return makeFunc(dstT.Elem(), src, dstSelector+"[0]", srcSelector)
 		} else if srcT, ok := src.(*types.Slice); ok {
 			return makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]")
