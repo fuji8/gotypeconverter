@@ -15,6 +15,7 @@ var flagUpdate bool
 type flagValue struct {
 	s      string
 	d      string
+	o      string
 	inport string
 }
 
@@ -29,6 +30,7 @@ func TestGenerator(t *testing.T) {
 		"external": flagValue{
 			s:      "echo.Echo",
 			d:      "externalDst",
+			o:      "",
 			inport: "",
 		},
 	}
@@ -43,9 +45,12 @@ func TestGenerator(t *testing.T) {
 			if !ok {
 				goconvertstruct.Generator.Flags.Set("s", fi.Name()+"Src")
 				goconvertstruct.Generator.Flags.Set("d", fi.Name()+"Dst")
+				goconvertstruct.Generator.Flags.Set("o", "")
+				goconvertstruct.Generator.Flags.Set("import", "")
 			} else {
 				goconvertstruct.Generator.Flags.Set("s", fv.s)
 				goconvertstruct.Generator.Flags.Set("d", fv.d)
+				goconvertstruct.Generator.Flags.Set("o", fv.o)
 				goconvertstruct.Generator.Flags.Set("import", fv.inport)
 			}
 
