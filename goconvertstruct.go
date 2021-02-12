@@ -2,6 +2,7 @@ package goconvertstruct
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -82,7 +83,6 @@ var Generator = &codegen.Generator{
 }
 
 func run(pass *codegen.Pass) error {
-	// initialize
 	t := strings.Split(flagSrc, ".")
 	srcStructName := t[len(t)-1]
 	t = strings.Split(flagDst, ".")
@@ -104,6 +104,7 @@ func run(pass *codegen.Pass) error {
 
 				ast.Inspect(fd, func(n ast.Node) bool {
 					if ident, ok := n.(*ast.Ident); ok {
+						// TODO fix same name struct
 						switch ident.Name {
 						case srcStructName:
 							srcAST = ident
@@ -120,6 +121,10 @@ func run(pass *codegen.Pass) error {
 		if srcAST != nil && dstAST != nil {
 			break
 		}
+	}
+
+	if srcAST == nil || dstAST == nil {
+		return errors.New("-s or -d are invalid")
 	}
 
 	outPkg := pass.Pkg.Name()
