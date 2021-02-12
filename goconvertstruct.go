@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
-	"go/format"
 	"go/types"
 	"io/ioutil"
 	"os"
@@ -134,12 +133,7 @@ func run(pass *codegen.Pass) error {
 	}
 	funcMaker.MakeFunc(dstType, srcType)
 
-	src, err := format.Source(buf.Bytes())
-	if err != nil {
-		fmt.Println("format error:" + buf.String())
-		return err
-	}
-	src, err = imports.Process(tmpFilePath, src, &imports.Options{
+	src, err := imports.Process(tmpFilePath, buf.Bytes(), &imports.Options{
 		Fragment: true,
 		Comments: true,
 	})
