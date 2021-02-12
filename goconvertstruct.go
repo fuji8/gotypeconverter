@@ -340,6 +340,13 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 					if !fm.pkgVisiable(srcT.Field(j)) {
 						continue
 					}
+					if srcT.Field(j).Embedded() && i == 0 {
+						written = fm.makeFunc(dst, srcT.Field(j).Type(),
+							dstSelector,
+							selectorGen(srcSelector, srcT.Field(j)),
+						) || written
+						continue
+					}
 					if dstT.Field(i).Name() == srcT.Field(j).Name() {
 						written = fm.makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
 							selectorGen(dstSelector, dstT.Field(i)),
