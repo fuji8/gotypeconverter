@@ -39,7 +39,11 @@ func init() {
 
 func CreateTmpFile(path string) {
 	tmpFilePath = path + "/tmp-001.go"
-	pkg := filepath.Base(path)
+	fullPath, err := filepath.Abs(path)
+	if err != nil {
+		panic(err)
+	}
+	pkg := filepath.Base(fullPath)
 
 	src := fmt.Sprintf("package %s\n", pkg)
 	src += fmt.Sprintf("func unique(){fmt.Println(%s{},%s{})}\n", flagSrc, flagDst)
