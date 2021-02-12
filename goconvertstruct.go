@@ -284,7 +284,10 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 			fmt.Fprintf(fm.buf, "%s = make(%s, 1)\n", dstSelector, fm.formatPkgType(dst))
 			return fm.makeFunc(dstT.Elem(), src, dstSelector+"[0]", srcSelector)
 		} else if srcT, ok := src.(*types.Slice); ok {
-			return fm.makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]")
+			fmt.Fprintf(fm.buf, "if len(%s)>=1 {\n", srcSelector)
+			written := fm.makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]")
+			fmt.Fprintln(fm.buf, "}")
+			return written
 		}
 	} else if dstRT.String() == "*types.Struct" || srcRT.String() == "*types.Struct" {
 
