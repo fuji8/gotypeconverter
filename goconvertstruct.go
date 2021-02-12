@@ -276,16 +276,15 @@ func (fm *FuncMaker) pkgVisiable(field *types.Var) bool {
 }
 
 func (fm *FuncMaker) formatPkgType(t types.Type) string {
-	tmp := strings.Split(t.String(), "/")
-	last := tmp[(len(tmp) - 1)]
-	tmp = strings.Split(last, ".")
+	// TODO fix only slice type and badic type
+	re := regexp.MustCompile(`[\w\./]*/`)
+	last := string(re.ReplaceAll([]byte(t.String()), []byte("")))
+
+	tmp := strings.Split(last, ".")
 	p := tmp[0]
-	var typ string
-	if len(tmp) == 2 {
-		typ = tmp[1]
-	}
 	if p == fm.pkg {
-		return typ
+		re := regexp.MustCompile(`[\w.]*\.`)
+		return string(re.ReplaceAll([]byte(last), []byte("")))
 	}
 	return last
 }
