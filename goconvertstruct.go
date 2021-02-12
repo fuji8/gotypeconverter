@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync/atomic"
 
 	"github.com/gostaticanalysis/codegen"
 	"golang.org/x/tools/imports"
@@ -31,6 +32,8 @@ var (
 	flagImportPkg string
 
 	tmpFilePath string
+
+	ops uint64 = 0
 )
 
 func init() {
@@ -125,7 +128,11 @@ func run(pass *codegen.Pass) error {
 
 	if srcAST == nil || dstAST == nil {
 		return errors.New("-s or -d are invalid")
+	} else if atomic.LoadUint64(&ops) != 0 {
+		return nil
 	}
+	// ファイルを書くのは、一回のみ
+	atomic.AddUint64(&ops, 1)
 
 	outPkg := pass.Pkg.Name()
 	buf := &bytes.Buffer{}
