@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"go/format"
+	"go/parser"
+	"go/token"
 	"go/types"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/gostaticanalysis/codegen"
@@ -132,19 +136,86 @@ func run(pass *codegen.Pass) error {
 		pkg: outPkg,
 	}
 	funcMaker.MakeFunc(dstType, srcType)
-	buf.Write(funcMaker.buf.Bytes())
 
-	src, err := imports.Process(tmpFilePath, buf.Bytes(), &imports.Options{
+	if flagOutput == "" {
+		buf.Write(funcMaker.buf.Bytes())
+
+		src, err := imports.Process(tmpFilePath, buf.Bytes(), &imports.Options{
+			Fragment: true,
+			Comments: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		pass.Print(string(src))
+		return nil
+	}
+
+	var src []byte
+	if output, err := ioutil.ReadFile(flagOutput); err == nil {
+		// already exist
+		output = append(output, funcMaker.buf.Bytes()...)
+		fset := token.NewFileSet()
+		file, err := parser.ParseFile(fset, flagOutput, output, parser.ParseComments)
+		if err != nil {
+			return err
+		}
+
+		// delete same name func
+		funcDeclMap := make(map[string]*ast.FuncDecl)
+		for _, d := range file.Decls {
+			if fd, ok := d.(*ast.FuncDecl); ok {
+				funcDeclMap[fd.Name.Name] = fd
+			}
+		}
+		newDecls := make([]ast.Decl, 0)
+		for _, d := range file.Decls {
+			if fd, ok := d.(*ast.FuncDecl); ok {
+				if _, ok := funcDeclMap[fd.Name.Name]; ok {
+					continue
+				}
+			}
+
+			newDecls = append(newDecls, d)
+		}
+		for _, lastFd := range funcDeclMap {
+			newDecls = append(newDecls, lastFd)
+		}
+		file.Decls = newDecls
+
+		// sort function
+		sort.Slice(file.Decls, func(i, j int) bool {
+			fdi, iok := file.Decls[i].(*ast.FuncDecl)
+			if !iok {
+				return true
+			}
+			fdj, jok := file.Decls[j].(*ast.FuncDecl)
+			if !jok {
+				return false
+			}
+			return fdi.Name.Name < fdj.Name.Name
+		})
+
+		dst := new(bytes.Buffer)
+		err = format.Node(dst, fset, file)
+		if err != nil {
+			return err
+		}
+
+		src = dst.Bytes()
+	} else {
+		buf.Write(funcMaker.buf.Bytes())
+		src = buf.Bytes()
+	}
+	// TODO fix
+	src, err := imports.Process(tmpFilePath, src, &imports.Options{
 		Fragment: true,
 		Comments: true,
 	})
+	src, _ = format.Source(src)
 	if err != nil {
 		return err
-	}
-
-	if flagOutput == "" {
-		pass.Print(string(src))
-		return nil
 	}
 
 	f, err := os.Create(flagOutput)
@@ -181,7 +252,7 @@ func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
 	fmt.Fprintf(fm.buf, "func Convert%sTo%s(src %s) (dst %s) {\n",
 		srcStructName, dstStructName, srcName, dstName)
 	fm.makeFunc(dstType.Underlying(), srcType.Underlying(), "dst", "src")
-	fmt.Fprintf(fm.buf, "return\n}\n")
+	fmt.Fprintf(fm.buf, "return\n}\n\n")
 }
 
 func selectorGen(selector string, field *types.Var) string {
