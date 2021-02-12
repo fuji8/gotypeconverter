@@ -191,7 +191,7 @@ func pkgVisiable(field *types.Var) bool {
 }
 
 func makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
-	if types.Identical(dst, src) {
+	if types.IdenticalIgnoreTags(dst, src) {
 		// same
 		fmt.Fprintf(&buf, "%s = %s\n", dstSelector, srcSelector)
 		return true
