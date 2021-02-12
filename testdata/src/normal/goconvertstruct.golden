@@ -4,6 +4,10 @@ package normal
 func ConvertnormalSrcTonormalDst(src normalSrc) (dst normalDst) {
 	dst.e.m = src.m
 	dst.e.x = src.x.A
+	dst.e.members = make([]uint8, len(src.members))
+	for i, _ := range src.members {
+		dst.e.members[i] = src.members[i].uaiueo
+	}
 	dst.x = src.x.C
 	dst.y = src.y
 	dst.z = src.z
