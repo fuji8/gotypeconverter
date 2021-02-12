@@ -338,7 +338,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 			srcT := src.(*types.Slice)
 
 			// TODO fix unique i, v
-			fmt.Fprintf(fm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
+			fmt.Fprintf(fm.buf, "%s = make([]%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
 			fmt.Fprintf(fm.buf, "for i, _ := range %s {\n", srcSelector)
 			fm.makeFunc(dstT.Elem(), srcT.Elem(),
 				dstSelector+"[i]",
@@ -347,7 +347,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 		}
 	} else if dstRT.String() == "*types.Slice" || srcRT.String() == "*types.Slice" {
 		if dstT, ok := dst.(*types.Slice); ok {
-			fmt.Fprintf(fm.buf, "%s = make(%s, 1)\n", dstSelector, fm.formatPkgType(dst))
+			fmt.Fprintf(fm.buf, "%s = make([]%s, 1)\n", dstSelector, fm.formatPkgType(dst))
 			return fm.makeFunc(dstT.Elem(), src, dstSelector+"[0]", srcSelector)
 		} else if srcT, ok := src.(*types.Slice); ok {
 			fmt.Fprintf(fm.buf, "if len(%s)>=1 {\n", srcSelector)
