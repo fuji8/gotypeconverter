@@ -281,9 +281,10 @@ func (fm *FuncMaker) formatPkgType(t types.Type) string {
 	last := string(re.ReplaceAll([]byte(t.String()), []byte("")))
 
 	tmp := strings.Split(last, ".")
-	p := tmp[0]
+	p := string(regexp.MustCompile(`\[\]`).ReplaceAll([]byte(tmp[0]), []byte("")))
+
 	if p == fm.pkg {
-		re := regexp.MustCompile(`[\w.]*\.`)
+		re := regexp.MustCompile(`[\w]*\.`)
 		return string(re.ReplaceAll([]byte(last), []byte("")))
 	}
 	return last
