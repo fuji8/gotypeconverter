@@ -128,10 +128,11 @@ func run(pass *codegen.Pass) error {
 	fmt.Fprintf(buf, "package %s\n", outPkg)
 
 	funcMaker := &FuncMaker{
-		buf: buf,
+		buf: new(bytes.Buffer),
 		pkg: outPkg,
 	}
 	funcMaker.MakeFunc(dstType, srcType)
+	buf.Write(funcMaker.buf.Bytes())
 
 	src, err := imports.Process(tmpFilePath, buf.Bytes(), &imports.Options{
 		Fragment: true,
