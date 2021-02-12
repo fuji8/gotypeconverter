@@ -185,12 +185,10 @@ func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
 }
 
 func selectorGen(selector string, field *types.Var) string {
-	//if field.Embedded() {
-	//return selector
-	//}
 	return fmt.Sprintf("%s.%s", selector, field.Name())
 }
 
+// TODO fix name
 func typeStep(t types.Type, selector string) (types.Type, string) {
 	switch ty := t.(type) {
 	case *types.Named:
