@@ -2,10 +2,14 @@
 package slice
 
 func ConvertsliceSrcTosliceDst(src sliceSrc) (dst sliceDst) {
-	dst.ns = src.ns[0]
+	if len(src.ns) >= 1 {
+		dst.ns = src.ns[0]
+	}
 	dst.n = make([]float64, 1)
 	dst.n[0] = src.n
-	dst.arr.bar = src.arr[0].bar
+	if len(src.arr) >= 1 {
+		dst.arr.bar = src.arr[0].bar
+	}
 	dst.strs = src.strs
 	dst.sarr = make([]struct {
 		bar int
