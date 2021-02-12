@@ -44,6 +44,8 @@ func init() {
 }
 
 func CreateTmpFile(path string) {
+	ops = 0
+
 	tmpFilePath = path + "/tmp-001.go"
 	fullPath, err := filepath.Abs(path)
 	if err != nil {
@@ -128,7 +130,8 @@ func run(pass *codegen.Pass) error {
 
 	if srcAST == nil || dstAST == nil {
 		return errors.New("-s or -d are invalid")
-	} else if atomic.LoadUint64(&ops) != 0 {
+	}
+	if atomic.LoadUint64(&ops) != 0 {
 		return nil
 	}
 	// ファイルを書くのは、一回のみ
