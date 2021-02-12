@@ -132,7 +132,7 @@ func run(pass *codegen.Pass) error {
 		buf: buf,
 		pkg: outPkg,
 	}
-	funcMaker.MakeFunc(dstType, srcType)
+	funcMaker.MakeFunc(dstType, srcType, flagDst, flagSrc)
 
 	src, err := format.Source(buf.Bytes())
 	if err != nil {
@@ -175,15 +175,15 @@ type FuncMaker struct {
 }
 
 // MakeFunc make function
-func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
+func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type, dstName, srcName string) {
 	re := regexp.MustCompile(`\.`)
 
-	srcStructName := re.ReplaceAll([]byte(flagSrc), []byte(""))
-	dstStructName := re.ReplaceAll([]byte(flagDst), []byte(""))
+	srcStructName := re.ReplaceAll([]byte(srcName), []byte(""))
+	dstStructName := re.ReplaceAll([]byte(dstName), []byte(""))
 
 	fmt.Fprintf(fm.buf, "func Convert%sTo%s(src %s) (dst %s) {\n",
-		srcStructName, dstStructName, flagSrc, flagDst)
-	fm.makeFunc(dstType, srcType, "dst", "src")
+		srcStructName, dstStructName, srcName, dstName)
+	fm.makeFunc(dstType.Underlying(), srcType.Underlying(), "dst", "src")
 	fmt.Fprintf(fm.buf, "return\n}\n")
 }
 
