@@ -88,11 +88,6 @@ var Generator = &codegen.Generator{
 }
 
 func run(pass *codegen.Pass) error {
-	t := strings.Split(flagSrc, ".")
-	srcStructName := t[len(t)-1]
-	t = strings.Split(flagDst, ".")
-	dstStructName := t[len(t)-1]
-
 	// delete tmp file
 	defer func() {
 		os.Remove(tmpFilePath)
@@ -106,17 +101,79 @@ func run(pass *codegen.Pass) error {
 				if fd.Name.Name != "unique" {
 					continue
 				}
-
+				/*
+				   17  .  Body: *ast.BlockStmt {
+				   18  .  .  Lbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:15
+				   19  .  .  List: []ast.Stmt (len = 1) {
+				   20  .  .  .  0: *ast.ExprStmt {
+				   21  .  .  .  .  X: *ast.CallExpr {
+				   22  .  .  .  .  .  Fun: *ast.SelectorExpr {
+				   23  .  .  .  .  .  .  X: *ast.Ident {
+				   24  .  .  .  .  .  .  .  NamePos: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:17
+				   25  .  .  .  .  .  .  .  Name: "fmt"
+				   26  .  .  .  .  .  .  }
+				   27  .  .  .  .  .  .  Sel: *ast.Ident {
+				   28  .  .  .  .  .  .  .  NamePos: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:21
+				   29  .  .  .  .  .  .  .  Name: "Println"
+				   30  .  .  .  .  .  .  }
+				   31  .  .  .  .  .  }
+				   32  .  .  .  .  .  Lparen: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:28
+				   33  .  .  .  .  .  Args: []ast.Expr (len = 2) {
+				   34  .  .  .  .  .  .  0: *ast.CompositeLit {
+				   35  .  .  .  .  .  .  .  Type: *ast.SelectorExpr {
+				   36  .  .  .  .  .  .  .  .  X: *ast.Ident {
+				   37  .  .  .  .  .  .  .  .  .  NamePos: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:29
+				   38  .  .  .  .  .  .  .  .  .  Name: "echo"
+				   39  .  .  .  .  .  .  .  .  }
+				   40  .  .  .  .  .  .  .  .  Sel: *ast.Ident {
+				   41  .  .  .  .  .  .  .  .  .  NamePos: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:34
+				   42  .  .  .  .  .  .  .  .  .  Name: "Echo"
+				   43  .  .  .  .  .  .  .  .  }
+				   44  .  .  .  .  .  .  .  }
+				   45  .  .  .  .  .  .  .  Lbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:38
+				   46  .  .  .  .  .  .  .  Rbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:39
+				   47  .  .  .  .  .  .  .  Incomplete: false
+				   48  .  .  .  .  .  .  }
+				   49  .  .  .  .  .  .  1: *ast.CompositeLit {
+				   50  .  .  .  .  .  .  .  Type: *ast.Ident {
+				   51  .  .  .  .  .  .  .  .  NamePos: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:42
+				   52  .  .  .  .  .  .  .  .  Name: "externalDst"
+				   53  .  .  .  .  .  .  .  }
+				   54  .  .  .  .  .  .  .  Lbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:53
+				   55  .  .  .  .  .  .  .  Rbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:54
+				   56  .  .  .  .  .  .  .  Incomplete: false
+				   57  .  .  .  .  .  .  }
+				   58  .  .  .  .  .  }
+				   59  .  .  .  .  .  Ellipsis: -
+				   60  .  .  .  .  .  Rparen: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:55
+				   61  .  .  .  .  }
+				   62  .  .  .  }
+				   63  .  .  }
+				   64  .  .  Rbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:57
+				   65  .  }
+				*/
 				ast.Inspect(fd, func(n ast.Node) bool {
-					if ident, ok := n.(*ast.Ident); ok {
-						// TODO fix same name struct
-						switch ident.Name {
-						case srcStructName:
-							srcAST = ident
-						case dstStructName:
-							dstAST = ident
+					if cl, ok := n.(*ast.CompositeLit); ok {
+						switch t := cl.Type.(type) {
+						case *ast.Ident:
+							switch t.Name {
+							case flagSrc:
+								srcAST = t
+							case flagDst:
+								dstAST = t
+							}
+						case *ast.SelectorExpr:
+							x, ok := t.X.(*ast.Ident)
+							if !ok {
+								return false
+							}
+							switch x.Name + "." + t.Sel.Name {
+							case flagSrc:
+								srcAST = t.Sel
+							case flagDst:
+								dstAST = t.Sel
+							}
 						}
-						return false
 					}
 					return true
 				})
