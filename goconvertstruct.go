@@ -18,7 +18,6 @@ import (
 	"sort"
 	"strings"
 	"sync/atomic"
-	"time"
 
 	"github.com/gostaticanalysis/codegen"
 	"golang.org/x/tools/imports"
@@ -50,7 +49,7 @@ func CreateTmpFile(path string) {
 	ops = 0
 
 	// tmpFilePath = path + "/tmp-001.go"
-	rand.Seed(time.Now().UnixNano())
+	// rand.Seed(time.Now().UnixNano())
 	tmpFilePath = fmt.Sprintf("%s/tmp%03d.go", path, rand.Int63n(1e3))
 	fullPath, err := filepath.Abs(path)
 	if err != nil {
@@ -60,7 +59,7 @@ func CreateTmpFile(path string) {
 
 	src := fmt.Sprintf("package %s\n", pkg)
 	uniqueFuncName = fmt.Sprintf("unique%03d", rand.Int63n(1e3))
-	src += fmt.Sprintf("func %s(){fmt.Println(%s{},%s{})}\n",
+	src += fmt.Sprintf("func %s(){var (a %s\n b %s\n)\nfmt.Println(a, b)}\n",
 		uniqueFuncName, flagSrc, flagDst)
 
 	// goimports do not imports from go.mod
@@ -110,47 +109,24 @@ func run(pass *codegen.Pass) error {
 				}
 
 				ast.Inspect(fd, func(n ast.Node) bool {
-					if cl, ok := n.(*ast.CompositeLit); ok {
-						switch t := cl.Type.(type) {
-						case *ast.Ident:
-							switch t.Name {
-							case flagSrc:
-								srcAST = t
-							case flagDst:
-								dstAST = t
-							}
-						case *ast.SelectorExpr:
-							x, ok := t.X.(*ast.Ident)
+					ast.Print(pass.Fset, n)
+					fmt.Println() // \n したい...
+					return false
+				})
+
+				ast.Inspect(fd, func(n ast.Node) bool {
+					if gd, ok := n.(*ast.GenDecl); ok {
+						//gd.Specs[0].(*)
+						for _, s := range gd.Specs {
+							s, ok := s.(*ast.ValueSpec)
 							if !ok {
 								return false
 							}
-							switch x.Name + "." + t.Sel.Name {
-							case flagSrc:
-								srcAST = t
-							case flagDst:
-								dstAST = t
-							}
-						case *ast.ArrayType:
-							switch tt := t.Elt.(type) {
-							case *ast.Ident:
-								switch "[]" + tt.Name {
-								case flagSrc:
-									srcAST = t
-								case flagDst:
-									dstAST = t
-								}
-							case *ast.SelectorExpr:
-								x, ok := tt.X.(*ast.Ident)
-								if !ok {
-									return false
-								}
-								switch "[]" + x.Name + "." + tt.Sel.Name {
-								case flagSrc:
-									srcAST = t
-								case flagDst:
-									dstAST = t
-								}
-
+							switch s.Names[0].Name {
+							case "a":
+								srcAST = s.Type
+							case "b":
+								dstAST = s.Type
 							}
 						}
 					}
@@ -295,7 +271,7 @@ func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
 	dstName := fm.formatPkgType(dstType)
 	srcName := fm.formatPkgType(srcType)
 
-	re := regexp.MustCompile(`\.|\[\]`)
+	re := regexp.MustCompile(`\.|\[\]|\*`)
 	srcStructName := re.ReplaceAll([]byte(srcName), []byte(""))
 	dstStructName := re.ReplaceAll([]byte(dstName), []byte(""))
 
@@ -314,6 +290,8 @@ func typeStep(t types.Type, selector string) (types.Type, string) {
 	switch ty := t.(type) {
 	case *types.Named:
 		return ty.Underlying(), selector
+	case *types.Pointer:
+		return ty.Underlying(), selector
 	}
 	return t, selector
 }
@@ -326,12 +304,12 @@ func (fm *FuncMaker) pkgVisiable(field *types.Var) bool {
 }
 
 func (fm *FuncMaker) formatPkgType(t types.Type) string {
-	// TODO fix only slice type and badic type
+	// TODO fix only pointer, slice and badic
 	re := regexp.MustCompile(`[\w\./]*/`)
 	last := string(re.ReplaceAll([]byte(t.String()), []byte("")))
 
 	tmp := strings.Split(last, ".")
-	p := string(regexp.MustCompile(`\[\]`).ReplaceAll([]byte(tmp[0]), []byte("")))
+	p := string(regexp.MustCompile(`\[\]|\*`).ReplaceAll([]byte(tmp[0]), []byte("")))
 
 	if p == fm.pkg {
 		re := regexp.MustCompile(`[\w]*\.`)
