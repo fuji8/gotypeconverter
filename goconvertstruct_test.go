@@ -33,6 +33,12 @@ func TestGenerator(t *testing.T) {
 			o:      "",
 			inport: "",
 		},
+		"pointer": flagValue{
+			s:      "[]*pointerSrc",
+			d:      "[]*pointerDst",
+			o:      "",
+			inport: "",
+		},
 	}
 
 	fileInfos, err := ioutil.ReadDir(codegentest.TestData() + "/src")

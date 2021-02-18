@@ -291,7 +291,7 @@ func typeStep(t types.Type, selector string) (types.Type, string) {
 	case *types.Named:
 		return ty.Underlying(), selector
 	case *types.Pointer:
-		return ty.Elem(), selector
+		return typeStep(ty.Elem(), selector)
 	}
 	return t, selector
 }
