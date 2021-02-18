@@ -389,20 +389,19 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 			dstT := dst.(*types.Slice)
 			srcT := src.(*types.Slice)
 
-			// TODO fix unused i
-			new := new(bytes.Buffer)
-			tmp := fm.buf.Bytes()
-			fm.buf = new
+			tmpFm := &FuncMaker{
+				buf: new(bytes.Buffer),
+				pkg: fm.pkg,
+			}
 			// TODO fix unique i, v
-			fmt.Fprintf(fm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
-			fmt.Fprintf(fm.buf, "for i, _ := range %s {\n", srcSelector)
-			written := fm.makeFunc(dstT.Elem(), srcT.Elem(),
+			fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
+			fmt.Fprintf(tmpFm.buf, "for i, _ := range %s {\n", srcSelector)
+			written := tmpFm.makeFunc(dstT.Elem(), srcT.Elem(),
 				dstSelector+"[i]",
 				srcSelector+"[i]")
-			fmt.Fprintf(fm.buf, "}\n")
-			fm.buf = bytes.NewBuffer(tmp)
+			fmt.Fprintf(tmpFm.buf, "}\n")
 			if written {
-				fm.buf.Write(new.Bytes())
+				fm.buf.Write(tmpFm.buf.Bytes())
 			}
 			return written
 		}
