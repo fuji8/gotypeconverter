@@ -13,10 +13,9 @@ import (
 var flagUpdate bool
 
 type flagValue struct {
-	s      string
-	d      string
-	o      string
-	inport string
+	s string
+	d string
+	o string
 }
 
 func TestMain(m *testing.M) {
@@ -28,16 +27,14 @@ func TestMain(m *testing.M) {
 func TestGenerator(t *testing.T) {
 	m := map[string]flagValue{
 		"external": flagValue{
-			s:      "[]echo.Echo",
-			d:      "externalDst",
-			o:      "",
-			inport: "",
+			s: "[]echo.Echo",
+			d: "externalDst",
+			o: "",
 		},
 		"pointer": flagValue{
-			s:      "[]*pointerSrc",
-			d:      "[]*pointerDst",
-			o:      "",
-			inport: "",
+			s: "[]*pointerSrc",
+			d: "[]*pointerDst",
+			o: "",
 		},
 	}
 
@@ -52,12 +49,10 @@ func TestGenerator(t *testing.T) {
 				goconvertstruct.Generator.Flags.Set("s", fi.Name()+"Src")
 				goconvertstruct.Generator.Flags.Set("d", fi.Name()+"Dst")
 				goconvertstruct.Generator.Flags.Set("o", "")
-				goconvertstruct.Generator.Flags.Set("import", "")
 			} else {
 				goconvertstruct.Generator.Flags.Set("s", fv.s)
 				goconvertstruct.Generator.Flags.Set("d", fv.d)
 				goconvertstruct.Generator.Flags.Set("o", fv.o)
-				goconvertstruct.Generator.Flags.Set("import", fv.inport)
 			}
 
 			goconvertstruct.CreateTmpFile(codegentest.TestData() + "/src/" + fi.Name())

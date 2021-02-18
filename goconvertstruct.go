@@ -42,7 +42,6 @@ func init() {
 	Generator.Flags.StringVar(&flagOutput, "o", "", "output file name")
 	Generator.Flags.StringVar(&flagSrc, "s", "", "source struct")
 	Generator.Flags.StringVar(&flagDst, "d", "", "destination struct")
-	Generator.Flags.StringVar(&flagImportPkg, "import", "hello", "import pkg")
 }
 
 func CreateTmpFile(path string) {
