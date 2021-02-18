@@ -15,7 +15,7 @@ func ConvertsliceSrcTosliceDst(src sliceSrc) (dst sliceDst) {
 		bar int
 		hii float32
 	}, len(src.sarr))
-	for i, _ := range src.sarr {
+	for i := range src.sarr {
 		dst.sarr[i].bar = src.sarr[i].bar
 	}
 	return

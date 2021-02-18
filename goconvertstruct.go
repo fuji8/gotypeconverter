@@ -294,7 +294,7 @@ func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
 
 	fmt.Fprintf(fm.buf, "func Convert%sTo%s(src %s) (dst %s) {\n",
 		srcStructName, dstStructName, srcName, dstName)
-	fm.makeFunc(dstType.Underlying(), srcType.Underlying(), "dst", "src")
+	fm.makeFunc(dstType.Underlying(), srcType.Underlying(), "dst", "src", "")
 	fmt.Fprintf(fm.buf, "return\n}\n\n")
 }
 
@@ -333,7 +333,14 @@ func (fm *FuncMaker) formatPkgType(t types.Type) string {
 	return last
 }
 
-func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector string) bool {
+func nextIndex(index string) string {
+	if index == "" {
+		return "i"
+	}
+	return string(index[0] + 1)
+}
+
+func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, index string) bool {
 	if types.IdenticalIgnoreTags(dst, src) {
 		// same
 		fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
@@ -361,6 +368,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 					written = fm.makeFunc(dstT.Field(i).Type(), src,
 						selectorGen(dstSelector, dstT.Field(i)),
 						srcSelector,
+						index,
 					) || written
 					continue
 				}
@@ -372,6 +380,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 						written = fm.makeFunc(dst, srcT.Field(j).Type(),
 							dstSelector,
 							selectorGen(srcSelector, srcT.Field(j)),
+							index,
 						) || written
 						continue
 					}
@@ -379,6 +388,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 						written = fm.makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
 							selectorGen(dstSelector, dstT.Field(i)),
 							selectorGen(srcSelector, srcT.Field(j)),
+							index,
 						) || written
 					}
 				}
@@ -393,12 +403,15 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 				buf: new(bytes.Buffer),
 				pkg: fm.pkg,
 			}
-			// TODO fix unique i, v
+
+			index = nextIndex(index)
 			fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
-			fmt.Fprintf(tmpFm.buf, "for i, _ := range %s {\n", srcSelector)
+			fmt.Fprintf(tmpFm.buf, "for %s := range %s {\n", index, srcSelector)
 			written := tmpFm.makeFunc(dstT.Elem(), srcT.Elem(),
-				dstSelector+"[i]",
-				srcSelector+"[i]")
+				dstSelector+"["+index+"]",
+				srcSelector+"["+index+"]",
+				index,
+			)
 			fmt.Fprintf(tmpFm.buf, "}\n")
 			if written {
 				fm.buf.Write(tmpFm.buf.Bytes())
@@ -408,10 +421,10 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 	} else if dstRT.String() == "*types.Slice" || srcRT.String() == "*types.Slice" {
 		if dstT, ok := dst.(*types.Slice); ok {
 			fmt.Fprintf(fm.buf, "%s = make(%s, 1)\n", dstSelector, fm.formatPkgType(dst))
-			return fm.makeFunc(dstT.Elem(), src, dstSelector+"[0]", srcSelector)
+			return fm.makeFunc(dstT.Elem(), src, dstSelector+"[0]", srcSelector, index)
 		} else if srcT, ok := src.(*types.Slice); ok {
 			fmt.Fprintf(fm.buf, "if len(%s)>=1 {\n", srcSelector)
-			written := fm.makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]")
+			written := fm.makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]", index)
 			fmt.Fprintln(fm.buf, "}")
 			return written
 		}
@@ -423,6 +436,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 					written := fm.makeFunc(dstT.Field(i).Type(), src,
 						selectorGen(dstSelector, dstT.Field(i)),
 						srcSelector,
+						index,
 					)
 					if written {
 						return true
@@ -434,6 +448,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector stri
 				written := fm.makeFunc(dst, srcT.Field(j).Type(),
 					dstSelector,
 					selectorGen(srcSelector, srcT.Field(j)),
+					index,
 				)
 				if written {
 					return true
