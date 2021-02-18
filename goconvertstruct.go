@@ -101,11 +101,6 @@ func run(pass *codegen.Pass) error {
 				if fd.Name.Name != "unique" {
 					continue
 				}
-				ast.Inspect(fd, func(n ast.Node) bool {
-					ast.Print(pass.Fset, n)
-					fmt.Println() // \n したい...
-					return false
-				})
 
 				ast.Inspect(fd, func(n ast.Node) bool {
 					if cl, ok := n.(*ast.CompositeLit); ok {
@@ -257,7 +252,7 @@ func run(pass *codegen.Pass) error {
 		src = buf.Bytes()
 	}
 	// TODO fix
-	src, err := imports.Process(tmpFilePath, src, &imports.Options{
+	src, err := imports.Process(flagOutput, src, &imports.Options{
 		Fragment: true,
 		Comments: true,
 	})
