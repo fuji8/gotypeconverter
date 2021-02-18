@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"go/types"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -17,6 +18,7 @@ import (
 	"sort"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/gostaticanalysis/codegen"
 	"golang.org/x/tools/imports"
@@ -31,7 +33,8 @@ var (
 	// flagImportPkg 解析に必要なためのpkg
 	flagImportPkg string
 
-	tmpFilePath string
+	tmpFilePath    string
+	uniqueFuncName string
 
 	ops uint64 = 0
 )
@@ -46,7 +49,9 @@ func init() {
 func CreateTmpFile(path string) {
 	ops = 0
 
-	tmpFilePath = path + "/tmp-001.go"
+	// tmpFilePath = path + "/tmp-001.go"
+	rand.Seed(time.Now().UnixNano())
+	tmpFilePath = fmt.Sprintf("%s/tmp%03d.go", path, rand.Int63n(1e3))
 	fullPath, err := filepath.Abs(path)
 	if err != nil {
 		panic(err)
@@ -54,7 +59,9 @@ func CreateTmpFile(path string) {
 	pkg := filepath.Base(fullPath)
 
 	src := fmt.Sprintf("package %s\n", pkg)
-	src += fmt.Sprintf("func unique(){fmt.Println(%s{},%s{})}\n", flagSrc, flagDst)
+	uniqueFuncName = fmt.Sprintf("unique%03d", rand.Int63n(1e3))
+	src += fmt.Sprintf("func %s(){fmt.Println(%s{},%s{})}\n",
+		uniqueFuncName, flagSrc, flagDst)
 
 	// goimports do not imports from go.mod
 	res, err := imports.Process(tmpFilePath, []byte(src), &imports.Options{
@@ -98,7 +105,7 @@ func run(pass *codegen.Pass) error {
 		// TODO read tmp-001.go only
 		for _, d := range f.Decls {
 			if fd, ok := d.(*ast.FuncDecl); ok {
-				if fd.Name.Name != "unique" {
+				if fd.Name.Name != uniqueFuncName {
 					continue
 				}
 
