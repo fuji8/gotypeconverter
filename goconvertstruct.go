@@ -108,11 +108,11 @@ func run(pass *codegen.Pass) error {
 					continue
 				}
 
-				ast.Inspect(fd, func(n ast.Node) bool {
-					ast.Print(pass.Fset, n)
-					fmt.Println() // \n したい...
-					return false
-				})
+				//ast.Inspect(fd, func(n ast.Node) bool {
+				//ast.Print(pass.Fset, n)
+				//fmt.Println() // \n したい...
+				//return false
+				//})
 
 				ast.Inspect(fd, func(n ast.Node) bool {
 					if gd, ok := n.(*ast.GenDecl); ok {
@@ -291,7 +291,7 @@ func typeStep(t types.Type, selector string) (types.Type, string) {
 	case *types.Named:
 		return ty.Underlying(), selector
 	case *types.Pointer:
-		return ty.Underlying(), selector
+		return ty.Elem(), selector
 	}
 	return t, selector
 }
@@ -316,6 +316,19 @@ func (fm *FuncMaker) formatPkgType(t types.Type) string {
 		return string(re.ReplaceAll([]byte(last), []byte("")))
 	}
 	return last
+}
+
+func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
+	tmpFm := &FuncMaker{
+		buf: new(bytes.Buffer),
+		pkg: fm.pkg,
+	}
+
+	written := f(tmpFm)
+	if written {
+		fm.buf.Write(tmpFm.buf.Bytes())
+	}
+	return written
 }
 
 func nextIndex(index string) string {
@@ -386,34 +399,33 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 			dstT := dst.(*types.Slice)
 			srcT := src.(*types.Slice)
 
-			tmpFm := &FuncMaker{
-				buf: new(bytes.Buffer),
-				pkg: fm.pkg,
-			}
-
 			index = nextIndex(index)
-			fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
-			fmt.Fprintf(tmpFm.buf, "for %s := range %s {\n", index, srcSelector)
-			written := tmpFm.makeFunc(dstT.Elem(), srcT.Elem(),
-				dstSelector+"["+index+"]",
-				srcSelector+"["+index+"]",
-				index,
-			)
-			fmt.Fprintf(tmpFm.buf, "}\n")
-			if written {
-				fm.buf.Write(tmpFm.buf.Bytes())
-			}
-			return written
+
+			return fm.deferWrite(func(tmpFm *FuncMaker) bool {
+				fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
+				fmt.Fprintf(tmpFm.buf, "for %s := range %s {\n", index, srcSelector)
+				written := tmpFm.makeFunc(dstT.Elem(), srcT.Elem(),
+					dstSelector+"["+index+"]",
+					srcSelector+"["+index+"]",
+					index,
+				)
+				fmt.Fprintf(tmpFm.buf, "}\n")
+				return written
+			})
 		}
 	} else if dstRT.String() == "*types.Slice" || srcRT.String() == "*types.Slice" {
 		if dstT, ok := dst.(*types.Slice); ok {
-			fmt.Fprintf(fm.buf, "%s = make(%s, 1)\n", dstSelector, fm.formatPkgType(dst))
-			return fm.makeFunc(dstT.Elem(), src, dstSelector+"[0]", srcSelector, index)
+			return fm.deferWrite(func(tmpFm *FuncMaker) bool {
+				fmt.Fprintf(tmpFm.buf, "%s = make(%s, 1)\n", dstSelector, fm.formatPkgType(dst))
+				return tmpFm.makeFunc(dstT.Elem(), src, dstSelector+"[0]", srcSelector, index)
+			})
 		} else if srcT, ok := src.(*types.Slice); ok {
-			fmt.Fprintf(fm.buf, "if len(%s)>=1 {\n", srcSelector)
-			written := fm.makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]", index)
-			fmt.Fprintln(fm.buf, "}")
-			return written
+			return fm.deferWrite(func(tmpFm *FuncMaker) bool {
+				fmt.Fprintf(tmpFm.buf, "if len(%s)>=1 {\n", srcSelector)
+				written := tmpFm.makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]", index)
+				fmt.Fprintln(tmpFm.buf, "}")
+				return written
+			})
 		}
 	} else if dstRT.String() == "*types.Struct" || srcRT.String() == "*types.Struct" {
 
