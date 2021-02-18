@@ -93,7 +93,7 @@ func run(pass *codegen.Pass) error {
 		os.Remove(tmpFilePath)
 	}()
 
-	var srcAST, dstAST *ast.Ident
+	var srcAST, dstAST ast.Expr
 	for _, f := range pass.Files {
 		// TODO read tmp-001.go only
 		for _, d := range f.Decls {
@@ -101,57 +101,12 @@ func run(pass *codegen.Pass) error {
 				if fd.Name.Name != "unique" {
 					continue
 				}
-				/*
-				   17  .  Body: *ast.BlockStmt {
-				   18  .  .  Lbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:15
-				   19  .  .  List: []ast.Stmt (len = 1) {
-				   20  .  .  .  0: *ast.ExprStmt {
-				   21  .  .  .  .  X: *ast.CallExpr {
-				   22  .  .  .  .  .  Fun: *ast.SelectorExpr {
-				   23  .  .  .  .  .  .  X: *ast.Ident {
-				   24  .  .  .  .  .  .  .  NamePos: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:17
-				   25  .  .  .  .  .  .  .  Name: "fmt"
-				   26  .  .  .  .  .  .  }
-				   27  .  .  .  .  .  .  Sel: *ast.Ident {
-				   28  .  .  .  .  .  .  .  NamePos: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:21
-				   29  .  .  .  .  .  .  .  Name: "Println"
-				   30  .  .  .  .  .  .  }
-				   31  .  .  .  .  .  }
-				   32  .  .  .  .  .  Lparen: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:28
-				   33  .  .  .  .  .  Args: []ast.Expr (len = 2) {
-				   34  .  .  .  .  .  .  0: *ast.CompositeLit {
-				   35  .  .  .  .  .  .  .  Type: *ast.SelectorExpr {
-				   36  .  .  .  .  .  .  .  .  X: *ast.Ident {
-				   37  .  .  .  .  .  .  .  .  .  NamePos: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:29
-				   38  .  .  .  .  .  .  .  .  .  Name: "echo"
-				   39  .  .  .  .  .  .  .  .  }
-				   40  .  .  .  .  .  .  .  .  Sel: *ast.Ident {
-				   41  .  .  .  .  .  .  .  .  .  NamePos: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:34
-				   42  .  .  .  .  .  .  .  .  .  Name: "Echo"
-				   43  .  .  .  .  .  .  .  .  }
-				   44  .  .  .  .  .  .  .  }
-				   45  .  .  .  .  .  .  .  Lbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:38
-				   46  .  .  .  .  .  .  .  Rbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:39
-				   47  .  .  .  .  .  .  .  Incomplete: false
-				   48  .  .  .  .  .  .  }
-				   49  .  .  .  .  .  .  1: *ast.CompositeLit {
-				   50  .  .  .  .  .  .  .  Type: *ast.Ident {
-				   51  .  .  .  .  .  .  .  .  NamePos: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:42
-				   52  .  .  .  .  .  .  .  .  Name: "externalDst"
-				   53  .  .  .  .  .  .  .  }
-				   54  .  .  .  .  .  .  .  Lbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:53
-				   55  .  .  .  .  .  .  .  Rbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:54
-				   56  .  .  .  .  .  .  .  Incomplete: false
-				   57  .  .  .  .  .  .  }
-				   58  .  .  .  .  .  }
-				   59  .  .  .  .  .  Ellipsis: -
-				   60  .  .  .  .  .  Rparen: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:55
-				   61  .  .  .  .  }
-				   62  .  .  .  }
-				   63  .  .  }
-				   64  .  .  Rbrace: /home/fuji/workspace/tools/goconvertstruct/testdata/src/external/tmp-001.go:9:57
-				   65  .  }
-				*/
+				ast.Inspect(fd, func(n ast.Node) bool {
+					ast.Print(pass.Fset, n)
+					fmt.Println() // \n したい...
+					return false
+				})
+
 				ast.Inspect(fd, func(n ast.Node) bool {
 					if cl, ok := n.(*ast.CompositeLit); ok {
 						switch t := cl.Type.(type) {
@@ -169,15 +124,36 @@ func run(pass *codegen.Pass) error {
 							}
 							switch x.Name + "." + t.Sel.Name {
 							case flagSrc:
-								srcAST = t.Sel
+								srcAST = t
 							case flagDst:
-								dstAST = t.Sel
+								dstAST = t
+							}
+						case *ast.ArrayType:
+							switch tt := t.Elt.(type) {
+							case *ast.Ident:
+								switch "[]" + tt.Name {
+								case flagSrc:
+									srcAST = t
+								case flagDst:
+									dstAST = t
+								}
+							case *ast.SelectorExpr:
+								x, ok := tt.X.(*ast.Ident)
+								if !ok {
+									return false
+								}
+								switch "[]" + x.Name + "." + tt.Sel.Name {
+								case flagSrc:
+									srcAST = t
+								case flagDst:
+									dstAST = t
+								}
+
 							}
 						}
 					}
 					return true
 				})
-
 			}
 		}
 		if srcAST != nil && dstAST != nil {
@@ -314,10 +290,10 @@ type FuncMaker struct {
 
 // MakeFunc make function
 func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
-	re := regexp.MustCompile(`\.`)
-
 	dstName := fm.formatPkgType(dstType)
 	srcName := fm.formatPkgType(srcType)
+
+	re := regexp.MustCompile(`\.|\[\]`)
 	srcStructName := re.ReplaceAll([]byte(srcName), []byte(""))
 	dstStructName := re.ReplaceAll([]byte(dstName), []byte(""))
 

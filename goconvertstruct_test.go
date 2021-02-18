@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 func TestGenerator(t *testing.T) {
 	m := map[string]flagValue{
 		"external": flagValue{
-			s:      "echo.Echo",
+			s:      "[]echo.Echo",
 			d:      "externalDst",
 			o:      "",
 			inport: "",
@@ -40,7 +40,7 @@ func TestGenerator(t *testing.T) {
 		panic(err)
 	}
 	for _, fi := range fileInfos {
-		if fi.IsDir() {
+		if fi.IsDir() && fi.Name() == "external" {
 			fv, ok := m[fi.Name()]
 			if !ok {
 				goconvertstruct.Generator.Flags.Set("s", fi.Name()+"Src")

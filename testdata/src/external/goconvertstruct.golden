@@ -3,7 +3,9 @@ package external
 
 import "github.com/labstack/echo"
 
-func ConvertechoEchoToexternalDst(src echo.Echo) (dst externalDst) {
-	dst.Debug = src.Debug
+func ConvertechoEchoToexternalDst(src []echo.Echo) (dst externalDst) {
+	if len(src) >= 1 {
+		dst.Debug = src[0].Debug
+	}
 	return
 }
