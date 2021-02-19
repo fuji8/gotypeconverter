@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/fuji8/goconvertstruct"
+	"github.com/fuji8/gotypeconverter"
 
 	"github.com/gostaticanalysis/codegen/singlegenerator"
 )
 
 func main() {
-	goconvertstruct.Init()
-	singlegenerator.Main(goconvertstruct.Generator) // os.Exit
+	gotypeconverter.Init()
+	singlegenerator.Main(gotypeconverter.Generator) // os.Exit
 }

@@ -1,4 +1,4 @@
-module github.com/fuji8/goconvertstruct
+module github.com/fuji8/gotypeconverter
 
 go 1.15
 

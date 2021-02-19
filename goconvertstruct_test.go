@@ -1,4 +1,4 @@
-package goconvertstruct_test
+package gotypeconverter_test
 
 import (
 	"flag"
@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/fuji8/goconvertstruct"
+	"github.com/fuji8/gotypeconverter"
 	"github.com/gostaticanalysis/codegen/codegentest"
 )
 
@@ -46,18 +46,18 @@ func TestGenerator(t *testing.T) {
 		if fi.IsDir() {
 			fv, ok := m[fi.Name()]
 			if !ok {
-				goconvertstruct.Generator.Flags.Set("s", fi.Name()+"Src")
-				goconvertstruct.Generator.Flags.Set("d", fi.Name()+"Dst")
-				goconvertstruct.Generator.Flags.Set("o", "")
+				gotypeconverter.Generator.Flags.Set("s", fi.Name()+"Src")
+				gotypeconverter.Generator.Flags.Set("d", fi.Name()+"Dst")
+				gotypeconverter.Generator.Flags.Set("o", "")
 			} else {
-				goconvertstruct.Generator.Flags.Set("s", fv.s)
-				goconvertstruct.Generator.Flags.Set("d", fv.d)
-				goconvertstruct.Generator.Flags.Set("o", fv.o)
+				gotypeconverter.Generator.Flags.Set("s", fv.s)
+				gotypeconverter.Generator.Flags.Set("d", fv.d)
+				gotypeconverter.Generator.Flags.Set("o", fv.o)
 			}
 
-			goconvertstruct.CreateTmpFile(codegentest.TestData() + "/src/" + fi.Name())
+			gotypeconverter.CreateTmpFile(codegentest.TestData() + "/src/" + fi.Name())
 
-			rs := codegentest.Run(t, codegentest.TestData(), goconvertstruct.Generator, fi.Name())
+			rs := codegentest.Run(t, codegentest.TestData(), gotypeconverter.Generator, fi.Name())
 			codegentest.Golden(t, rs, flagUpdate)
 		}
 	}

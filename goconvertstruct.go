@@ -1,4 +1,4 @@
-package goconvertstruct
+package gotypeconverter
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-const doc = "goconvertstruct is ..."
+const doc = "gotypeconverter is ..."
 
 var (
 	flagOutput string
@@ -87,7 +87,7 @@ func Init() {
 }
 
 var Generator = &codegen.Generator{
-	Name: "goconvertstruct",
+	Name: "gotypeconverter",
 	Doc:  doc,
 	Run:  run,
 }
