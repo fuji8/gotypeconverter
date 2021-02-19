@@ -4,11 +4,11 @@ type e struct {
 	e       bool
 	m       string
 	x       int
-	members []uint8 `bye:"bye"`
+	members []uint8
 }
 
 type ug struct {
-	uaiueo uint8 `hello:"hello"`
+	uaiueo uint8
 	gaaaa  uint8
 }
 
@@ -16,7 +16,7 @@ type normalSrc struct {
 	x struct {
 		A int
 		B bool
-		C string `cvt:""`
+		C string
 		D string
 	}
 	y int
