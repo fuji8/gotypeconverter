@@ -58,7 +58,7 @@ func TestGenerator(t *testing.T) {
 			gotypeconverter.CreateTmpFile(codegentest.TestData() + "/src/" + fi.Name())
 
 			rs := codegentest.Run(t, codegentest.TestData(), gotypeconverter.Generator, fi.Name())
-			codegentest.Golden(t, rs, true)
+			codegentest.Golden(t, rs, flagUpdate)
 		}
 	}
 }
