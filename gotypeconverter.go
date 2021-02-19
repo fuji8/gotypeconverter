@@ -76,12 +76,13 @@ func CreateTmpFile(path string) {
 
 // Init 解析のための一時ファイルを作成する
 func Init() {
-	if Generator.Flags.NArg() == 0 {
-		return
-	}
 	err := Generator.Flags.Parse(os.Args[1:])
 	if err != nil {
 		panic(err)
+	}
+
+	if Generator.Flags.NArg() == 0 {
+		return
 	}
 
 	path := os.Args[len(os.Args)-1]
