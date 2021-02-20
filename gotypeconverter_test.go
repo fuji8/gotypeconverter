@@ -36,6 +36,11 @@ func TestGenerator(t *testing.T) {
 			d: "[]*pointerDst",
 			o: "",
 		},
+		"samename": flagValue{
+			s: "Hoge",
+			d: "foo.Hoge",
+			o: "",
+		},
 	}
 
 	fileInfos, err := ioutil.ReadDir(codegentest.TestData() + "/src")

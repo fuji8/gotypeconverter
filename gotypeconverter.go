@@ -118,7 +118,6 @@ func run(pass *codegen.Pass) error {
 
 				ast.Inspect(fd, func(n ast.Node) bool {
 					if gd, ok := n.(*ast.GenDecl); ok {
-						//gd.Specs[0].(*)
 						for _, s := range gd.Specs {
 							s, ok := s.(*ast.ValueSpec)
 							if !ok {
