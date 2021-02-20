@@ -341,7 +341,7 @@ func nextIndex(index string) string {
 }
 
 func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, index string) bool {
-	if types.IdenticalIgnoreTags(dst, src) {
+	if types.Identical(dst, src) {
 		// same
 		fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
 		return true
