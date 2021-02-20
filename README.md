@@ -1,5 +1,6 @@
 # gotypeconverter [![](https://github.com/fuji8/gotypeconverter/workflows/build/badge.svg)](https://github.com/fuji8/gotypeconverter/actions)
-gotypeconverter generates a function that converts two different named types.
+gotypeconverter generates a function that converts two structurally different types.
+
 
 ## Install
 ```bash
