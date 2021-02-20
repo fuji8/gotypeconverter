@@ -232,7 +232,7 @@ func run(pass *codegen.Pass) error {
 
 		src = dst.Bytes()
 	} else {
-		buf.Write(funcMaker.buf.Bytes())
+		buf.Write(funcMaker.WriteBytes())
 		src = buf.Bytes()
 	}
 	// TODO fix
