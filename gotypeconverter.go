@@ -165,7 +165,7 @@ func run(pass *codegen.Pass) error {
 	funcMaker.MakeFunc(dstType, srcType)
 
 	if flagOutput == "" {
-		buf.Write(funcMaker.buf.Bytes())
+		buf.Write(funcMaker.WriteBytes())
 
 		src, err := imports.Process(tmpFilePath, buf.Bytes(), &imports.Options{
 			Fragment: true,
@@ -182,7 +182,7 @@ func run(pass *codegen.Pass) error {
 	var src []byte
 	if output, err := ioutil.ReadFile(flagOutput); err == nil {
 		// already exist
-		output = append(output, funcMaker.buf.Bytes()...)
+		output = append(output, funcMaker.WriteBytes()...)
 		fset := token.NewFileSet()
 		file, err := parser.ParseFile(fset, flagOutput, output, parser.ParseComments)
 		if err != nil {
@@ -261,14 +261,39 @@ func run(pass *codegen.Pass) error {
 
 // FuncMaker generate function
 type FuncMaker struct {
-	buf *bytes.Buffer
-
+	funcName string
+	buf      *bytes.Buffer
 	// output package
 	pkg string
+
+	parentFunc *FuncMaker
+	childFunc  []*FuncMaker
 }
 
 // MakeFunc make function
+// TODO fix only named type
 func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
+	dstName := fm.formatPkgType(dstType)
+	srcName := fm.formatPkgType(srcType)
+
+	fm.funcName = fm.getFuncName(dstType, srcType)
+
+	fmt.Fprintf(fm.buf, "func %s(src %s) (dst %s) {\n",
+		fm.funcName, srcName, dstName)
+	fm.makeFunc(dstType.Underlying(), srcType.Underlying(), "dst", "src", "")
+	fmt.Fprintf(fm.buf, "return\n}\n\n")
+}
+
+// WriteBytes 全ての関数を書き出す。
+func (fm *FuncMaker) WriteBytes() (out []byte) {
+	out = fm.buf.Bytes()
+	for _, child := range fm.childFunc {
+		out = append(out, child.WriteBytes()...)
+	}
+	return
+}
+
+func (fm *FuncMaker) getFuncName(dstType, srcType types.Type) string {
 	dstName := fm.formatPkgType(dstType)
 	srcName := fm.formatPkgType(srcType)
 
@@ -276,10 +301,7 @@ func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
 	srcStructName := re.ReplaceAll([]byte(srcName), []byte(""))
 	dstStructName := re.ReplaceAll([]byte(dstName), []byte(""))
 
-	fmt.Fprintf(fm.buf, "func Convert%sTo%s(src %s) (dst %s) {\n",
-		srcStructName, dstStructName, srcName, dstName)
-	fm.makeFunc(dstType.Underlying(), srcType.Underlying(), "dst", "src", "")
-	fmt.Fprintf(fm.buf, "return\n}\n\n")
+	return fmt.Sprintf("Convert%sTo%s", srcStructName, dstStructName)
 }
 
 func selectorGen(selector string, field *types.Var) string {
@@ -295,6 +317,35 @@ func typeStep(t types.Type, selector string) (types.Type, string) {
 		return typeStep(ty.Elem(), selector)
 	}
 	return t, selector
+}
+
+func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
+	// 1. rootまで遡る。
+	var root *FuncMaker
+	var goBackRoot func(*FuncMaker) *FuncMaker
+	goBackRoot = func(fm *FuncMaker) *FuncMaker {
+		if fm.parentFunc == nil {
+			return fm
+		}
+		return goBackRoot(fm.parentFunc)
+	}
+	root = goBackRoot(fm)
+
+	// 2. 存在しているか見る。
+	var inspectSamaFuncName func(*FuncMaker) bool
+	inspectSamaFuncName = func(fm *FuncMaker) bool {
+		if fm.funcName == funcName {
+			return true
+		}
+		for _, child := range fm.childFunc {
+			exist := inspectSamaFuncName(child)
+			if exist {
+				return true
+			}
+		}
+		return false
+	}
+	return inspectSamaFuncName(root)
 }
 
 func (fm *FuncMaker) pkgVisiable(field *types.Var) bool {
@@ -321,8 +372,9 @@ func (fm *FuncMaker) formatPkgType(t types.Type) string {
 
 func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
 	tmpFm := &FuncMaker{
-		buf: new(bytes.Buffer),
-		pkg: fm.pkg,
+		buf:        new(bytes.Buffer),
+		pkg:        fm.pkg,
+		parentFunc: fm.parentFunc,
 	}
 
 	written := f(tmpFm)
@@ -343,6 +395,23 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 	if types.Identical(dst, src) {
 		// same
 		fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
+		return true
+	}
+
+	dstNamed, dok := dst.(*types.Named)
+	srcNamed, sok := src.(*types.Named)
+	if dok && sok {
+		funcName := fm.getFuncName(dstNamed, srcNamed)
+		if !fm.isAlreadyExist(funcName) {
+			newFM := &FuncMaker{
+				buf:        new(bytes.Buffer),
+				pkg:        fm.pkg,
+				parentFunc: fm,
+			}
+			fm.childFunc = append(fm.childFunc, newFM)
+			newFM.MakeFunc(dstNamed, srcNamed)
+		}
+		fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
 		return true
 	}
 
