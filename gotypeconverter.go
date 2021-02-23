@@ -407,6 +407,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Named:
 		case *types.Slice:
 		case *types.Struct:
+			return fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Pointer:
 		default:
 		}
@@ -417,6 +418,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Named:
 		case *types.Slice:
 		case *types.Struct:
+			return fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Pointer:
 		default:
 		}
@@ -426,6 +428,20 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Basic:
 		case *types.Named:
 		case *types.Slice:
+			// slice & slice
+			index = nextIndex(index)
+
+			return fm.deferWrite(func(tmpFm *FuncMaker) bool {
+				fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
+				fmt.Fprintf(tmpFm.buf, "for %s := range %s {\n", index, srcSelector)
+				written := tmpFm.makeFunc(dstT.Elem(), srcT.Elem(),
+					dstSelector+"["+index+"]",
+					srcSelector+"["+index+"]",
+					index,
+				)
+				fmt.Fprintf(tmpFm.buf, "}\n")
+				return written
+			})
 		case *types.Struct:
 		case *types.Pointer:
 		default:
@@ -434,11 +450,54 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 	case *types.Struct:
 		switch srcT := src.(type) {
 		case *types.Basic:
+			return fm.structAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Named:
+			return fm.structAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Slice:
 		case *types.Struct:
+			// struct & struct
+			written := false
+
+			for i := 0; i < dstT.NumFields(); i++ {
+				if !fm.pkgVisiable(dstT.Field(i)) {
+					continue
+				}
+				if dstT.Field(i).Embedded() {
+					written = fm.makeFunc(dstT.Field(i).Type(), src,
+						selectorGen(dstSelector, dstT.Field(i)),
+						srcSelector,
+						index,
+					) || written
+					continue
+				}
+				for j := 0; j < srcT.NumFields(); j++ {
+					if !fm.pkgVisiable(srcT.Field(j)) {
+						continue
+					}
+					if srcT.Field(j).Embedded() {
+						if i == 0 {
+							written = fm.makeFunc(dst, srcT.Field(j).Type(),
+								dstSelector,
+								selectorGen(srcSelector, srcT.Field(j)),
+								index,
+							) || written
+						}
+						continue
+					}
+					if dstT.Field(i).Name() == srcT.Field(j).Name() {
+						written = fm.makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
+							selectorGen(dstSelector, dstT.Field(i)),
+							selectorGen(srcSelector, srcT.Field(j)),
+							index,
+						) || written
+					}
+				}
+			}
+			return written
 		case *types.Pointer:
+			return fm.structAndOther(dstT, src, dstSelector, srcSelector, index)
 		default:
+			return fm.structAndOther(dstT, src, dstSelector, srcSelector, index)
 		}
 
 	case *types.Pointer:
@@ -447,6 +506,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Named:
 		case *types.Slice:
 		case *types.Struct:
+			return fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Pointer:
 		default:
 		}
@@ -457,6 +517,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Named:
 		case *types.Slice:
 		case *types.Struct:
+			return fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Pointer:
 		default:
 		}
@@ -590,6 +651,36 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 					return true
 				}
 			}
+		}
+	}
+	return false
+}
+
+func (fm *FuncMaker) structAndOther(dstT *types.Struct, src types.Type, dstSelector, srcSelector, index string) bool {
+	for i := 0; i < dstT.NumFields(); i++ {
+		if dstT.Field(i).Embedded() {
+			written := fm.makeFunc(dstT.Field(i).Type(), src,
+				selectorGen(dstSelector, dstT.Field(i)),
+				srcSelector,
+				index,
+			)
+			if written {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (fm *FuncMaker) otherAndStruct(dst types.Type, srcT *types.Struct, dstSelector, srcSelector, index string) bool {
+	for j := 0; j < srcT.NumFields(); j++ {
+		written := fm.makeFunc(dst, srcT.Field(j).Type(),
+			dstSelector,
+			selectorGen(srcSelector, srcT.Field(j)),
+			index,
+		)
+		if written {
+			return true
 		}
 	}
 	return false
