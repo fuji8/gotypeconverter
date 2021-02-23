@@ -20,6 +20,8 @@ jobs:
       run: |
         cd testdata/src/external
         go mod vendor
+        cd ../knoq
+        go mod vendor
         cd
       
     - name: Test
