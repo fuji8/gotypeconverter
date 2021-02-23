@@ -281,7 +281,7 @@ func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
 
 	fmt.Fprintf(fm.buf, "func %s(src %s) (dst %s) {\n",
 		fm.funcName, srcName, dstName)
-	fm.makeFunc(dstType.Underlying(), srcType.Underlying(), "dst", "src", "")
+	fm.makeFunc(dstType, srcType, "dst", "src", "")
 	fmt.Fprintf(fm.buf, "return\n}\n\n")
 }
 
@@ -648,6 +648,9 @@ func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSele
 		}
 		fm.childFunc = append(fm.childFunc, newFM)
 		newFM.MakeFunc(dstT, srcT)
+	}
+	if funcName == fm.funcName {
+		return fm.makeFunc(dstT.Underlying(), srcT.Underlying(), dstSelector, srcSelector, index)
 	}
 	fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
 	return true
