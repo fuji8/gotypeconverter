@@ -411,6 +411,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Struct:
 			return fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Pointer:
+			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index)
 		default:
 		}
 
@@ -440,7 +441,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Struct:
 			return fm.sliceAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Pointer:
-			return fm.sliceAndOther(dstT, src, dstSelector, srcSelector, index)
+			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index)
 		default:
 			return fm.sliceAndOther(dstT, src, dstSelector, srcSelector, index)
 		}
@@ -456,7 +457,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Struct:
 			return fm.structAndStruct(dstT, srcT, dstSelector, srcSelector, index)
 		case *types.Pointer:
-			return fm.structAndOther(dstT, src, dstSelector, srcSelector, index)
+			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index)
 		default:
 			return fm.structAndOther(dstT, src, dstSelector, srcSelector, index)
 		}
@@ -465,13 +466,15 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		switch srcT := src.(type) {
 		case *types.Basic:
 		case *types.Named:
-			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index)
+			return fm.pointerAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Slice:
-			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index)
+			return fm.pointerAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Struct:
-			return fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index)
+			return fm.pointerAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Pointer:
+			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index)
 		default:
+			return fm.pointerAndOther(dstT, src, dstSelector, srcSelector, index)
 		}
 
 	default:
@@ -484,6 +487,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Struct:
 			return fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Pointer:
+			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index)
 		default:
 		}
 
@@ -751,4 +755,26 @@ func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSele
 	}
 	fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
 	return true
+}
+
+// TODO fix pointer
+
+func (fm *FuncMaker) pointer(pointerT *types.Pointer, selector string) (types.Type, string) {
+	return pointerT.Elem(), selector
+}
+
+func (fm *FuncMaker) pointerAndOther(dstT *types.Pointer, src types.Type, dstSelector, srcSelector, index string) bool {
+	dst, dstSelector := fm.pointer(dstT, dstSelector)
+	return fm.makeFunc(dst, src, dstSelector, srcSelector, index)
+}
+
+func (fm *FuncMaker) otherAndPointer(dst types.Type, srcT *types.Pointer, dstSelector, srcSelector, index string) bool {
+	src, srcSelector := fm.pointer(srcT, srcSelector)
+	return fm.makeFunc(dst, src, dstSelector, srcSelector, index)
+}
+
+func (fm *FuncMaker) pointerAndPointer(dstT *types.Pointer, srcT *types.Pointer, dstSelector, srcSelector, index string) bool {
+	dst, dstSelector := fm.pointer(dstT, dstSelector)
+	src, srcSelector := fm.pointer(srcT, srcSelector)
+	return fm.makeFunc(dst, src, dstSelector, srcSelector, index)
 }
