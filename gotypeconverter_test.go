@@ -29,17 +29,14 @@ func TestGenerator(t *testing.T) {
 		"external": flagValue{
 			s: "[]echo.Echo",
 			d: "externalDst",
-			o: "",
 		},
 		"pointer": flagValue{
 			s: "[]*pointerSrc",
 			d: "[]*pointerDst",
-			o: "",
 		},
 		"samename": flagValue{
 			s: "Hoge",
 			d: "foo.Hoge",
-			o: "",
 		},
 		"knoq": flagValue{
 			s: "domain.Event",

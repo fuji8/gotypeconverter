@@ -426,6 +426,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Pointer:
 			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index)
 		default:
+			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index)
 		}
 
 	case *types.Slice:
