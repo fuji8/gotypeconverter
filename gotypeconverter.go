@@ -297,26 +297,23 @@ func (fm *FuncMaker) getFuncName(dstType, srcType types.Type) string {
 	dstName := fm.formatPkgType(dstType)
 	srcName := fm.formatPkgType(srcType)
 
-	re := regexp.MustCompile(`\.|\[\]|\*`)
-	srcStructName := re.ReplaceAll([]byte(srcName), []byte(""))
-	dstStructName := re.ReplaceAll([]byte(dstName), []byte(""))
+	re := regexp.MustCompile(`\.`)
+	srcName = string(re.ReplaceAll([]byte(srcName), []byte("")))
+	dstName = string(re.ReplaceAll([]byte(dstName), []byte("")))
 
-	return fmt.Sprintf("Convert%sTo%s", srcStructName, dstStructName)
+	re = regexp.MustCompile(`\[\]`)
+	srcName = string(re.ReplaceAll([]byte(srcName), []byte("Slice")))
+	dstName = string(re.ReplaceAll([]byte(dstName), []byte("Slice")))
+
+	re = regexp.MustCompile(`\*`)
+	srcName = string(re.ReplaceAll([]byte(srcName), []byte("Pointer")))
+	dstName = string(re.ReplaceAll([]byte(dstName), []byte("Pointer")))
+
+	return fmt.Sprintf("Convert%sTo%s", srcName, dstName)
 }
 
 func selectorGen(selector string, field *types.Var) string {
 	return fmt.Sprintf("%s.%s", selector, field.Name())
-}
-
-// TODO fix name
-func typeStep(t types.Type, selector string) (types.Type, string) {
-	switch ty := t.(type) {
-	case *types.Named:
-		return ty.Underlying(), selector
-	case *types.Pointer:
-		return typeStep(ty.Elem(), selector)
-	}
-	return t, selector
 }
 
 func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
@@ -372,14 +369,17 @@ func (fm *FuncMaker) formatPkgType(t types.Type) string {
 
 func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
 	tmpFm := &FuncMaker{
+		funcName:   fm.funcName,
 		buf:        new(bytes.Buffer),
 		pkg:        fm.pkg,
 		parentFunc: fm.parentFunc,
+		childFunc:  fm.childFunc,
 	}
 
 	written := f(tmpFm)
 	if written {
 		fm.buf.Write(tmpFm.buf.Bytes())
+		fm.childFunc = append(fm.childFunc, tmpFm.childFunc...)
 	}
 	return written
 }
@@ -618,6 +618,7 @@ func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSele
 			buf:        new(bytes.Buffer),
 			pkg:        fm.pkg,
 			parentFunc: fm,
+			childFunc:  nil,
 		}
 		fm.childFunc = append(fm.childFunc, newFM)
 		newFM.MakeFunc(dstT, srcT)
