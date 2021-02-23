@@ -159,8 +159,9 @@ func run(pass *codegen.Pass) error {
 	fmt.Fprintf(buf, "package %s\n", outPkg)
 
 	funcMaker := &FuncMaker{
-		buf: new(bytes.Buffer),
-		pkg: outPkg,
+		buf:                new(bytes.Buffer),
+		pkg:                outPkg,
+		dstWrittenSelector: map[string]struct{}{},
 	}
 	funcMaker.MakeFunc(dstType, srcType)
 
@@ -269,6 +270,8 @@ type FuncMaker struct {
 
 	parentFunc *FuncMaker
 	childFunc  []*FuncMaker
+
+	dstWrittenSelector map[string]struct{}
 }
 
 // MakeFunc make function
@@ -387,12 +390,16 @@ func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
 		pkg:        fm.pkg,
 		parentFunc: fm.parentFunc,
 		childFunc:  fm.childFunc,
+
+		// 同じselectorに対して書き込むのは一回のみ
+		dstWrittenSelector: fm.dstWrittenSelector,
 	}
 
 	written := f(tmpFm)
 	if written {
 		fm.buf.Write(tmpFm.buf.Bytes())
 		fm.childFunc = tmpFm.childFunc
+		fm.dstWrittenSelector = tmpFm.dstWrittenSelector
 	}
 	return written
 }
@@ -407,8 +414,13 @@ func nextIndex(index string) string {
 func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, index string) bool {
 	if types.Identical(dst, src) {
 		// same
-		fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
-		return true
+		_, ok := fm.dstWrittenSelector[dstSelector]
+		if !ok {
+			fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
+			fm.dstWrittenSelector[dstSelector] = struct{}{}
+			return true
+		}
+		return false
 	}
 
 	switch dstT := dst.(type) {
@@ -588,7 +600,9 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 			}
 		}
 	}
-	return written
+	return written ||
+		fm.structAndOther(dstT, srcT, dstSelector, srcSelector, index) ||
+		fm.otherAndStruct(dstT, srcT, dstSelector, srcSelector, index)
 }
 
 func (fm *FuncMaker) sliceAndOther(dstT *types.Slice, src types.Type, dstSelector, srcSelector, index string) bool {
@@ -641,10 +655,11 @@ func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSele
 	funcName := fm.getFuncName(dstT, srcT)
 	if !fm.isAlreadyExist(funcName) {
 		newFM := &FuncMaker{
-			buf:        new(bytes.Buffer),
-			pkg:        fm.pkg,
-			parentFunc: fm,
-			childFunc:  nil,
+			buf:                new(bytes.Buffer),
+			pkg:                fm.pkg,
+			parentFunc:         fm,
+			childFunc:          nil,
+			dstWrittenSelector: map[string]struct{}{},
 		}
 		fm.childFunc = append(fm.childFunc, newFM)
 		newFM.MakeFunc(dstT, srcT)
@@ -652,14 +667,19 @@ func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSele
 	if funcName == fm.funcName {
 		return fm.makeFunc(dstT.Underlying(), srcT.Underlying(), dstSelector, srcSelector, index)
 	}
-	fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
-	return true
+	_, ok := fm.dstWrittenSelector[dstSelector]
+	if !ok {
+		fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
+		fm.dstWrittenSelector[dstSelector] = struct{}{}
+		return true
+	}
+	return false
 }
 
 // TODO fix pointer
 
 func (fm *FuncMaker) pointer(pointerT *types.Pointer, selector string) (types.Type, string) {
-	return pointerT.Elem(), selector
+	return pointerT.Elem(), fmt.Sprintf("(*%s)", selector)
 }
 
 func (fm *FuncMaker) pointerAndOther(dstT *types.Pointer, src types.Type, dstSelector, srcSelector, index string) bool {

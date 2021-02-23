@@ -11,7 +11,7 @@ func ConvertdomainEventToserviceEventRes(src domain.Event) (dst service.EventRes
 	dst.ID = src.ID
 	dst.CreatedAt = src.Model.CreatedAt
 	dst.UpdatedAt = src.Model.UpdatedAt
-	dst.DeletedAt = src.Model.DeletedAt
+	(*dst.DeletedAt) = src.Model.DeletedAt
 	dst.EventReq.Name = src.Name
 	dst.EventReq.Description = src.Description
 	dst.EventReq.AllowTogether = src.AllowTogether
@@ -37,7 +37,6 @@ func ConvertdomainEventTagToserviceTagRelationReq(src domain.EventTag) (dst serv
 
 func ConvertdomainEventTagToserviceTagRelationRes(src domain.EventTag) (dst service.TagRelationRes) {
 	dst.ID = src.Tag.ID
-	dst.TagRelationReq.Name = src.Tag.Name
 	dst.TagRelationReq.Name = src.Tag.Name
 	dst.TagRelationReq.Locked = src.Locked
 	return
