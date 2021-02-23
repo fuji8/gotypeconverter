@@ -13,7 +13,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -398,7 +397,6 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
 		return true
 	}
-	// start
 
 	switch dstT := dst.(type) {
 	case *types.Basic:
@@ -493,135 +491,6 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 
 	}
 
-	// end
-
-	dstNamed, dok := dst.(*types.Named)
-	srcNamed, sok := src.(*types.Named)
-	if dok && sok {
-		funcName := fm.getFuncName(dstNamed, srcNamed)
-		if !fm.isAlreadyExist(funcName) {
-			newFM := &FuncMaker{
-				buf:        new(bytes.Buffer),
-				pkg:        fm.pkg,
-				parentFunc: fm,
-			}
-			fm.childFunc = append(fm.childFunc, newFM)
-			newFM.MakeFunc(dstNamed, srcNamed)
-		}
-		fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
-		return true
-	}
-
-	dst, dstSelector = typeStep(dst, dstSelector)
-	src, srcSelector = typeStep(src, srcSelector)
-
-	dstRT := reflect.TypeOf(dst)
-	srcRT := reflect.TypeOf(src)
-	if dstRT.String() == srcRT.String() {
-		// same type
-		switch dst.(type) {
-		case *types.Struct:
-			dstT := dst.(*types.Struct)
-			srcT := src.(*types.Struct)
-			written := false
-
-			for i := 0; i < dstT.NumFields(); i++ {
-				if !fm.pkgVisiable(dstT.Field(i)) {
-					continue
-				}
-				if dstT.Field(i).Embedded() {
-					written = fm.makeFunc(dstT.Field(i).Type(), src,
-						selectorGen(dstSelector, dstT.Field(i)),
-						srcSelector,
-						index,
-					) || written
-					continue
-				}
-				for j := 0; j < srcT.NumFields(); j++ {
-					if !fm.pkgVisiable(srcT.Field(j)) {
-						continue
-					}
-					if srcT.Field(j).Embedded() {
-						if i == 0 {
-							written = fm.makeFunc(dst, srcT.Field(j).Type(),
-								dstSelector,
-								selectorGen(srcSelector, srcT.Field(j)),
-								index,
-							) || written
-						}
-						continue
-					}
-					if dstT.Field(i).Name() == srcT.Field(j).Name() {
-						written = fm.makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
-							selectorGen(dstSelector, dstT.Field(i)),
-							selectorGen(srcSelector, srcT.Field(j)),
-							index,
-						) || written
-					}
-				}
-			}
-			return written
-		// case *types.Array:
-		case *types.Slice:
-			dstT := dst.(*types.Slice)
-			srcT := src.(*types.Slice)
-
-			index = nextIndex(index)
-
-			return fm.deferWrite(func(tmpFm *FuncMaker) bool {
-				fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
-				fmt.Fprintf(tmpFm.buf, "for %s := range %s {\n", index, srcSelector)
-				written := tmpFm.makeFunc(dstT.Elem(), srcT.Elem(),
-					dstSelector+"["+index+"]",
-					srcSelector+"["+index+"]",
-					index,
-				)
-				fmt.Fprintf(tmpFm.buf, "}\n")
-				return written
-			})
-		}
-	} else if dstRT.String() == "*types.Slice" || srcRT.String() == "*types.Slice" {
-		if dstT, ok := dst.(*types.Slice); ok {
-			return fm.deferWrite(func(tmpFm *FuncMaker) bool {
-				fmt.Fprintf(tmpFm.buf, "%s = make(%s, 1)\n", dstSelector, fm.formatPkgType(dst))
-				return tmpFm.makeFunc(dstT.Elem(), src, dstSelector+"[0]", srcSelector, index)
-			})
-		} else if srcT, ok := src.(*types.Slice); ok {
-			return fm.deferWrite(func(tmpFm *FuncMaker) bool {
-				fmt.Fprintf(tmpFm.buf, "if len(%s)>=1 {\n", srcSelector)
-				written := tmpFm.makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]", index)
-				fmt.Fprintln(tmpFm.buf, "}")
-				return written
-			})
-		}
-	} else if dstRT.String() == "*types.Struct" || srcRT.String() == "*types.Struct" {
-
-		if dstT, ok := dst.(*types.Struct); ok {
-			for i := 0; i < dstT.NumFields(); i++ {
-				if dstT.Field(i).Embedded() {
-					written := fm.makeFunc(dstT.Field(i).Type(), src,
-						selectorGen(dstSelector, dstT.Field(i)),
-						srcSelector,
-						index,
-					)
-					if written {
-						return true
-					}
-				}
-			}
-		} else if srcT, ok := src.(*types.Struct); ok {
-			for j := 0; j < srcT.NumFields(); j++ {
-				written := fm.makeFunc(dst, srcT.Field(j).Type(),
-					dstSelector,
-					selectorGen(srcSelector, srcT.Field(j)),
-					index,
-				)
-				if written {
-					return true
-				}
-			}
-		}
-	}
 	return false
 }
 
