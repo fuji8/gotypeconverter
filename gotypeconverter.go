@@ -379,7 +379,7 @@ func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
 	written := f(tmpFm)
 	if written {
 		fm.buf.Write(tmpFm.buf.Bytes())
-		fm.childFunc = append(fm.childFunc, tmpFm.childFunc...)
+		fm.childFunc = tmpFm.childFunc
 	}
 	return written
 }
