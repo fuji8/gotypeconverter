@@ -52,7 +52,7 @@ func TestGenerator(t *testing.T) {
 		panic(err)
 	}
 	for _, fi := range fileInfos {
-		if fi.IsDir() && fi.Name() == "knoq" {
+		if fi.IsDir() {
 			fv, ok := m[fi.Name()]
 			if !ok {
 				gotypeconverter.Generator.Flags.Set("s", fi.Name()+"Src")
