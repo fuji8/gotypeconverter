@@ -405,6 +405,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		switch srcT := src.(type) {
 		case *types.Basic:
 		case *types.Named:
+			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Slice:
 			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Struct:
@@ -416,12 +417,15 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 	case *types.Named:
 		switch srcT := src.(type) {
 		case *types.Basic:
+			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Named:
+			return fm.namedAndNamed(dstT, srcT, dstSelector, srcSelector, index)
 		case *types.Slice:
-			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index)
+			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Struct:
-			return fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index)
+			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Pointer:
+			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index)
 		default:
 		}
 
@@ -430,7 +434,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Basic:
 			return fm.sliceAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Named:
-			return fm.sliceAndOther(dstT, src, dstSelector, srcSelector, index)
+			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Slice:
 			return fm.sliceAndSlice(dstT, srcT, dstSelector, srcSelector, index)
 		case *types.Struct:
@@ -446,7 +450,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Basic:
 			return fm.structAndOther(dstT, src, dstSelector, srcSelector, index)
 		case *types.Named:
-			return fm.structAndOther(dstT, src, dstSelector, srcSelector, index)
+			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Slice:
 			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Struct:
@@ -461,6 +465,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		switch srcT := src.(type) {
 		case *types.Basic:
 		case *types.Named:
+			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Slice:
 			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Struct:
@@ -473,6 +478,7 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		switch srcT := src.(type) {
 		case *types.Basic:
 		case *types.Named:
+			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Slice:
 			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index)
 		case *types.Struct:
@@ -706,7 +712,7 @@ func (fm *FuncMaker) sliceAndSlice(dstT *types.Slice, srcT *types.Slice, dstSele
 	index = nextIndex(index)
 
 	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
-		fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dst), srcSelector)
+		fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dstT), srcSelector)
 		fmt.Fprintf(tmpFm.buf, "for %s := range %s {\n", index, srcSelector)
 		written := tmpFm.makeFunc(dstT.Elem(), srcT.Elem(),
 			dstSelector+"["+index+"]",
@@ -716,4 +722,33 @@ func (fm *FuncMaker) sliceAndSlice(dstT *types.Slice, srcT *types.Slice, dstSele
 		fmt.Fprintf(tmpFm.buf, "}\n")
 		return written
 	})
+}
+
+func (fm *FuncMaker) named(namedT *types.Named, selector string) (types.Type, string) {
+	return namedT.Underlying(), selector
+}
+
+func (fm *FuncMaker) namedAndOther(dstT *types.Named, src types.Type, dstSelector, srcSelector, index string) bool {
+	dst, dstSelector := fm.named(dstT, dstSelector)
+	return fm.makeFunc(dst, src, dstSelector, srcSelector, index)
+}
+
+func (fm *FuncMaker) otherAndNamed(dst types.Type, srcT *types.Named, dstSelector, srcSelector, index string) bool {
+	src, srcSelector := fm.named(srcT, srcSelector)
+	return fm.makeFunc(dst, src, dstSelector, srcSelector, index)
+}
+
+func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSelector, srcSelector, index string) bool {
+	funcName := fm.getFuncName(dstT, srcT)
+	if !fm.isAlreadyExist(funcName) {
+		newFM := &FuncMaker{
+			buf:        new(bytes.Buffer),
+			pkg:        fm.pkg,
+			parentFunc: fm,
+		}
+		fm.childFunc = append(fm.childFunc, newFM)
+		newFM.MakeFunc(dstT, srcT)
+	}
+	fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
+	return true
 }
