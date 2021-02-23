@@ -19,6 +19,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/fatih/structtag"
 	"github.com/gostaticanalysis/codegen"
 	"golang.org/x/tools/imports"
 )
@@ -316,6 +317,18 @@ func selectorGen(selector string, field *types.Var) string {
 	return fmt.Sprintf("%s.%s", selector, field.Name())
 }
 
+func getTag(tag string) (string, error) {
+	tags, err := structtag.Parse(tag)
+	if err != nil {
+		return "", err
+	}
+	cvtTag, err := tags.Get("cvt")
+	if err != nil {
+		return "", err
+	}
+	return cvtTag.Name, nil
+}
+
 func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
 	// 1. rootまで遡る。
 	var root *FuncMaker
@@ -545,6 +558,7 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 				continue
 			}
 			if srcT.Field(j).Embedded() {
+				// for only once
 				if i == 0 {
 					written = fm.makeFunc(dstT, srcT.Field(j).Type(),
 						dstSelector,
@@ -554,7 +568,18 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 				}
 				continue
 			}
-			if dstT.Field(i).Name() == srcT.Field(j).Name() {
+
+			// if struct tag "cvt" exists, use struct tag
+			dField, err := getTag(dstT.Tag(i))
+			if err != nil {
+				dField = dstT.Field(i).Name()
+			}
+			sField, err := getTag(srcT.Tag(j))
+			if err != nil {
+				sField = srcT.Field(j).Name()
+			}
+
+			if dField == sField {
 				written = fm.makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
 					selectorGen(dstSelector, dstT.Field(i)),
 					selectorGen(srcSelector, srcT.Field(j)),
