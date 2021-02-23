@@ -232,6 +232,7 @@ func run(pass *codegen.Pass) error {
 
 		src = dst.Bytes()
 	} else {
+		// TODO sort
 		buf.Write(funcMaker.WriteBytes())
 		src = buf.Bytes()
 	}
@@ -397,6 +398,72 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
 		return true
 	}
+	// start
+
+	switch dstT := dst.(type) {
+	case *types.Basic:
+		switch srcT := src.(type) {
+		case *types.Basic:
+		case *types.Named:
+		case *types.Slice:
+		case *types.Struct:
+		case *types.Pointer:
+		default:
+		}
+
+	case *types.Named:
+		switch srcT := src.(type) {
+		case *types.Basic:
+		case *types.Named:
+		case *types.Slice:
+		case *types.Struct:
+		case *types.Pointer:
+		default:
+		}
+
+	case *types.Slice:
+		switch srcT := src.(type) {
+		case *types.Basic:
+		case *types.Named:
+		case *types.Slice:
+		case *types.Struct:
+		case *types.Pointer:
+		default:
+		}
+
+	case *types.Struct:
+		switch srcT := src.(type) {
+		case *types.Basic:
+		case *types.Named:
+		case *types.Slice:
+		case *types.Struct:
+		case *types.Pointer:
+		default:
+		}
+
+	case *types.Pointer:
+		switch srcT := src.(type) {
+		case *types.Basic:
+		case *types.Named:
+		case *types.Slice:
+		case *types.Struct:
+		case *types.Pointer:
+		default:
+		}
+
+	default:
+		switch srcT := src.(type) {
+		case *types.Basic:
+		case *types.Named:
+		case *types.Slice:
+		case *types.Struct:
+		case *types.Pointer:
+		default:
+		}
+
+	}
+
+	// end
 
 	dstNamed, dok := dst.(*types.Named)
 	srcNamed, sok := src.(*types.Named)
