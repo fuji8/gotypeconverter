@@ -4,8 +4,14 @@ import (
 	"time"
 )
 
+type sqlNullTine struct {
+	Time time.Time
+}
+type deleteAt sqlNullTine
+
 type srcModel struct {
 	createdAt time.Time
+	deleteAt  deleteAt
 }
 
 type pointerSrc struct {
@@ -22,7 +28,7 @@ type dstRoomGroup struct {
 
 type dstModel struct {
 	createdAt time.Time
-	deleteAt  time.Time
+	deleteAt  *time.Time
 }
 
 type pointerDst struct {
