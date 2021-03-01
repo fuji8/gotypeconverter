@@ -429,9 +429,27 @@ func checkHistory(dst, src types.Type, history [][2]types.Type) bool {
 	return false
 }
 
-func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) dstWritten(dstSelector string) bool {
 	_, ok := fm.dstWrittenSelector[dstSelector]
 	if ok {
+		return true
+	}
+
+	// 前方一致
+	// TODO fix pointer selector
+	for sel := range fm.dstWrittenSelector {
+
+		re := regexp.MustCompile(fmt.Sprintf(`\^%s[\.\(\[]`, sel))
+		written := re.Match([]byte(dstSelector))
+		if written {
+			return true
+		}
+	}
+	return false
+}
+
+func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+	if fm.dstWritten(dstSelector) {
 		return false
 	}
 
@@ -668,6 +686,9 @@ func (fm *FuncMaker) sliceAndSlice(dstT *types.Slice, srcT *types.Slice, dstSele
 			history,
 		)
 		fmt.Fprintf(tmpFm.buf, "}\n")
+		if written {
+			tmpFm.dstWrittenSelector[dstSelector] = struct{}{}
+		}
 		return written
 	})
 }
