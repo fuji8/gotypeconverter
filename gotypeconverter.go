@@ -547,16 +547,18 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 
 func (fm *FuncMaker) structAndOther(dstT *types.Struct, src types.Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	for i := 0; i < dstT.NumFields(); i++ {
-		if dstT.Field(i).Embedded() {
-			written := fm.makeFunc(dstT.Field(i).Type(), src,
-				selectorGen(dstSelector, dstT.Field(i)),
-				srcSelector,
-				index,
-				history,
-			)
-			if written {
-				return true
-			}
+		if !fm.pkgVisiable(dstT.Field(i)) {
+			continue
+		}
+
+		written := fm.makeFunc(dstT.Field(i).Type(), src,
+			selectorGen(dstSelector, dstT.Field(i)),
+			srcSelector,
+			index,
+			history,
+		)
+		if written {
+			return true
 		}
 	}
 	return false
@@ -564,6 +566,10 @@ func (fm *FuncMaker) structAndOther(dstT *types.Struct, src types.Type, dstSelec
 
 func (fm *FuncMaker) otherAndStruct(dst types.Type, srcT *types.Struct, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	for j := 0; j < srcT.NumFields(); j++ {
+		if !fm.pkgVisiable(srcT.Field(j)) {
+			continue
+		}
+
 		written := fm.makeFunc(dst, srcT.Field(j).Type(),
 			dstSelector,
 			selectorGen(srcSelector, srcT.Field(j)),
@@ -599,7 +605,7 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 			}
 			if srcT.Field(j).Embedded() {
 				// for only once
-				if i == 0 {
+				if i == dstT.NumFields()-1 {
 					written = fm.makeFunc(dstT, srcT.Field(j).Type(),
 						dstSelector,
 						selectorGen(srcSelector, srcT.Field(j)),
