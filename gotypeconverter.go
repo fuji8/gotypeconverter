@@ -29,7 +29,7 @@ const doc = "gotypeconverter generates a function that converts two different na
 var (
 	flagOutput string
 
-	flagSrc, flagDst string
+	flagSrc, flagDst, flagPkg string
 
 	tmpFilePath    string
 	uniqueFuncName string
@@ -41,6 +41,7 @@ func init() {
 	Generator.Flags.StringVar(&flagOutput, "o", "", "output file; if nil, output stdout")
 	Generator.Flags.StringVar(&flagSrc, "s", "", "source struct")
 	Generator.Flags.StringVar(&flagDst, "d", "", "destination struct")
+	Generator.Flags.StringVar(&flagDst, "pkg", "", "output package; if nil, the directoryName and packageName must be same and will be used")
 }
 
 func CreateTmpFile(path string) {
@@ -53,7 +54,11 @@ func CreateTmpFile(path string) {
 	if err != nil {
 		panic(err)
 	}
-	pkg := filepath.Base(fullPath)
+
+	pkg := flagPkg
+	if flagPkg == "" {
+		pkg = filepath.Base(fullPath)
+	}
 
 	src := fmt.Sprintf("package %s\n", pkg)
 	uniqueFuncName = fmt.Sprintf("unique%03d", rand.Int63n(1e3))
@@ -149,7 +154,10 @@ func run(pass *codegen.Pass) error {
 	// ファイルを書くのは、一回のみ
 	atomic.AddUint64(&ops, 1)
 
-	outPkg := pass.Pkg.Name()
+	outPkg := flagPkg
+	if flagPkg == "" {
+		outPkg = pass.Pkg.Name()
+	}
 	buf := &bytes.Buffer{}
 
 	srcType := pass.TypesInfo.TypeOf(srcAST)
