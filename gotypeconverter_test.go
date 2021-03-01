@@ -39,8 +39,8 @@ func TestGenerator(t *testing.T) {
 			d: "foo.Hoge",
 		},
 		"knoq": flagValue{
-			s: "domain.Event",
-			d: "service.EventRes",
+			s: "repository.Event",
+			d: "domain.Event",
 		},
 	}
 
