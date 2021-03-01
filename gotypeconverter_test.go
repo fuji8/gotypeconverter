@@ -49,7 +49,7 @@ func TestGenerator(t *testing.T) {
 		panic(err)
 	}
 	for _, fi := range fileInfos {
-		if fi.IsDir() && fi.Name() == "knoq" {
+		if fi.IsDir() {
 			fv, ok := m[fi.Name()]
 			if !ok {
 				gotypeconverter.Generator.Flags.Set("s", fi.Name()+"Src")
@@ -64,7 +64,7 @@ func TestGenerator(t *testing.T) {
 			gotypeconverter.CreateTmpFile(codegentest.TestData() + "/src/" + fi.Name())
 
 			rs := codegentest.Run(t, codegentest.TestData(), gotypeconverter.Generator, fi.Name())
-			codegentest.Golden(t, rs, true)
+			codegentest.Golden(t, rs, flagUpdate)
 		}
 	}
 }
