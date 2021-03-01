@@ -4,45 +4,48 @@ package knoq
 import (
 	"github.com/gofrs/uuid"
 	"github.com/traPtitech/knoQ/domain"
-	"github.com/traPtitech/knoQ/router/service"
+	"github.com/traPtitech/knoQ/repository"
 )
 
-func ConvertdomainEventToserviceEventRes(src domain.Event) (dst service.EventRes) {
+func ConvertrepositoryEventTodomainEvent(src repository.Event) (dst domain.Event) {
 	dst.ID = src.ID
-	dst.CreatedAt = src.Model.CreatedAt
-	dst.UpdatedAt = src.Model.UpdatedAt
-	(*dst.DeletedAt) = src.Model.DeletedAt
-	dst.EventReq.Name = src.Name
-	dst.EventReq.Description = src.Description
-	dst.EventReq.AllowTogether = src.AllowTogether
-	dst.EventReq.TimeStart = src.TimeStart
-	dst.EventReq.TimeEnd = src.TimeEnd
-	dst.EventReq.Tags = make([]service.TagRelationReq, len(src.Tags))
+	dst.Model.CreatedAt = src.Model.CreatedAt
+	dst.Model.UpdatedAt = src.Model.UpdatedAt
+	dst.Model.DeletedAt = (*src.Model.DeletedAt)
+	dst.Name = src.Name
+	dst.Description = src.Description
+	dst.Room = ConvertrepositoryRoomTodomainRoom(src.Room)
+	dst.TimeStart = src.TimeStart
+	dst.TimeEnd = src.TimeEnd
+	dst.CreatedBy = ConvertuuidUUIDTodomainUser(src.CreatedBy)
+	dst.Tags = make([]domain.EventTag, len(src.Tags))
 	for i := range src.Tags {
-		dst.EventReq.Tags[i] = ConvertdomainEventTagToserviceTagRelationReq(src.Tags[i])
+		dst.Tags[i] = ConvertrepositoryTagTodomainEventTag(src.Tags[i])
 	}
-	dst.Tags = make([]service.TagRelationRes, len(src.Tags))
-	for i := range src.Tags {
-		dst.Tags[i] = ConvertdomainEventTagToserviceTagRelationRes(src.Tags[i])
-	}
-	dst.CreatedBy = ConvertdomainUserTouuidUUID(src.CreatedBy)
+	dst.AllowTogether = src.AllowTogether
 	return
 }
 
-func ConvertdomainEventTagToserviceTagRelationReq(src domain.EventTag) (dst service.TagRelationReq) {
-	dst.Name = src.Tag.Name
+func ConvertrepositoryRoomTodomainRoom(src repository.Room) (dst domain.Room) {
+	dst.ID = src.ID
+	dst.Place = src.Place
+	dst.TimeStart = src.TimeStart
+	dst.TimeEnd = src.TimeEnd
+	dst.Events = make([]domain.Event, len(src.Events))
+	for i := range src.Events {
+		dst.Events[i] = ConvertrepositoryEventTodomainEvent(src.Events[i])
+	}
+	dst.CreatedBy = ConvertuuidUUIDTodomainUser(src.CreatedBy)
+	return
+}
+
+func ConvertuuidUUIDTodomainUser(src uuid.UUID) (dst domain.User) {
+	return
+}
+
+func ConvertrepositoryTagTodomainEventTag(src repository.Tag) (dst domain.EventTag) {
+	dst.Tag.ID = src.ID
+	dst.Tag.Name = src.Name
 	dst.Locked = src.Locked
-	return
-}
-
-func ConvertdomainEventTagToserviceTagRelationRes(src domain.EventTag) (dst service.TagRelationRes) {
-	dst.ID = src.Tag.ID
-	dst.TagRelationReq.Name = src.Tag.Name
-	dst.TagRelationReq.Locked = src.Locked
-	return
-}
-
-func ConvertdomainUserTouuidUUID(src domain.User) (dst uuid.UUID) {
-	dst = src.ID
 	return
 }

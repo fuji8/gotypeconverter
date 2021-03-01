@@ -39,8 +39,8 @@ func TestGenerator(t *testing.T) {
 			d: "foo.Hoge",
 		},
 		"knoq": flagValue{
-			s: "domain.Event",
-			d: "service.EventRes",
+			s: "repository.Event",
+			d: "domain.Event",
 		},
 	}
 
@@ -49,7 +49,7 @@ func TestGenerator(t *testing.T) {
 		panic(err)
 	}
 	for _, fi := range fileInfos {
-		if fi.IsDir() {
+		if fi.IsDir() && fi.Name() == "knoq" {
 			fv, ok := m[fi.Name()]
 			if !ok {
 				gotypeconverter.Generator.Flags.Set("s", fi.Name()+"Src")
@@ -64,7 +64,7 @@ func TestGenerator(t *testing.T) {
 			gotypeconverter.CreateTmpFile(codegentest.TestData() + "/src/" + fi.Name())
 
 			rs := codegentest.Run(t, codegentest.TestData(), gotypeconverter.Generator, fi.Name())
-			codegentest.Golden(t, rs, flagUpdate)
+			codegentest.Golden(t, rs, true)
 		}
 	}
 }
