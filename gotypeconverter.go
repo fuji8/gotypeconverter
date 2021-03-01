@@ -271,6 +271,7 @@ type FuncMaker struct {
 	parentFunc *FuncMaker
 	childFunc  []*FuncMaker
 
+	// 同じselectorに対して書き込むのは一回のみ
 	dstWrittenSelector map[string]struct{}
 }
 
@@ -391,7 +392,6 @@ func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
 		parentFunc: fm.parentFunc,
 		childFunc:  fm.childFunc,
 
-		// 同じselectorに対して書き込むのは一回のみ
 		dstWrittenSelector: fm.dstWrittenSelector,
 	}
 
@@ -412,15 +412,14 @@ func nextIndex(index string) string {
 }
 
 func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, index string) bool {
-	if types.Identical(dst, src) {
-		// same
-		_, ok := fm.dstWrittenSelector[dstSelector]
-		if !ok {
-			fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
-			fm.dstWrittenSelector[dstSelector] = struct{}{}
-			return true
-		}
+	_, ok := fm.dstWrittenSelector[dstSelector]
+	if ok {
 		return false
+	}
+	if types.Identical(dst, src) {
+		fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
+		fm.dstWrittenSelector[dstSelector] = struct{}{}
+		return true
 	}
 
 	switch dstT := dst.(type) {
@@ -600,9 +599,9 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 			}
 		}
 	}
-	return written ||
-		fm.structAndOther(dstT, srcT, dstSelector, srcSelector, index) ||
-		fm.otherAndStruct(dstT, srcT, dstSelector, srcSelector, index)
+	return written
+	//fm.structAndOther(dstT, srcT, dstSelector, srcSelector, index) ||
+	//fm.otherAndStruct(dstT, srcT, dstSelector, srcSelector, index)
 }
 
 func (fm *FuncMaker) sliceAndOther(dstT *types.Slice, src types.Type, dstSelector, srcSelector, index string) bool {
@@ -667,13 +666,10 @@ func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSele
 	if funcName == fm.funcName {
 		return fm.makeFunc(dstT.Underlying(), srcT.Underlying(), dstSelector, srcSelector, index)
 	}
-	_, ok := fm.dstWrittenSelector[dstSelector]
-	if !ok {
-		fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
-		fm.dstWrittenSelector[dstSelector] = struct{}{}
-		return true
-	}
-	return false
+
+	fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
+	fm.dstWrittenSelector[dstSelector] = struct{}{}
+	return true
 }
 
 // TODO fix pointer
