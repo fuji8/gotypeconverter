@@ -371,6 +371,7 @@ func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
 }
 
 func (fm *FuncMaker) pkgVisiable(field *types.Var) bool {
+	// TODO look package path
 	if fm.pkg == field.Pkg().Name() {
 		return true
 	}
