@@ -29,7 +29,7 @@ const doc = "gotypeconverter generates a function that converts two different na
 var (
 	flagOutput string
 
-	flagSrc, flagDst, flagPkg string
+	flagSrc, flagDst, flagPkg, flagStructTag string
 
 	tmpFilePath    string
 	uniqueFuncName string
@@ -42,6 +42,7 @@ func init() {
 	Generator.Flags.StringVar(&flagSrc, "s", "", "source struct")
 	Generator.Flags.StringVar(&flagDst, "d", "", "destination struct")
 	Generator.Flags.StringVar(&flagPkg, "pkg", "", "output package; if nil, the directoryName and packageName must be same and will be used")
+	Generator.Flags.StringVar(&flagStructTag, "structTag", "cvt", "")
 }
 
 func CreateTmpFile(path string) {
@@ -342,7 +343,7 @@ func getTag(tag string) (name string, option optionTag) {
 	if err != nil {
 		return
 	}
-	cvtTag, err := tags.Get("cvt")
+	cvtTag, err := tags.Get(flagStructTag)
 	if err != nil {
 		return
 	}
