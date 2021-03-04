@@ -108,6 +108,7 @@ func run(pass *codegen.Pass) error {
 	}()
 
 	var srcAST, dstAST ast.Expr
+	existTargeFile := false
 	for _, f := range pass.Files {
 		// TODO read tmp*.go only
 		for _, d := range f.Decls {
@@ -115,6 +116,8 @@ func run(pass *codegen.Pass) error {
 				if fd.Name.Name != uniqueFuncName {
 					continue
 				}
+
+				existTargeFile = true
 
 				//ast.Inspect(fd, func(n ast.Node) bool {
 				//ast.Print(pass.Fset, n)
@@ -139,11 +142,17 @@ func run(pass *codegen.Pass) error {
 					}
 					return true
 				})
+				break
 			}
 		}
-		if srcAST != nil && dstAST != nil {
+		if existTargeFile {
 			break
 		}
+	}
+
+	if !existTargeFile {
+		// 解析対象のpassでない
+		return nil
 	}
 
 	if srcAST == nil || dstAST == nil {
