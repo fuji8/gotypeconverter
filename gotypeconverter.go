@@ -329,16 +329,39 @@ func selectorGen(selector string, field *types.Var) string {
 	return fmt.Sprintf("%s.%s", selector, field.Name())
 }
 
-func getTag(tag string) (string, error) {
+type optionTag int
+
+const (
+	ignore optionTag = iota + 1
+	readOnly
+	writeOnly
+)
+
+func getTag(tag string) (name string, option optionTag) {
 	tags, err := structtag.Parse(tag)
 	if err != nil {
-		return "", err
+		return
 	}
 	cvtTag, err := tags.Get("cvt")
 	if err != nil {
-		return "", err
+		return
 	}
-	return cvtTag.Name, nil
+
+	for _, tag := range append(cvtTag.Options, cvtTag.Name) {
+		tag = strings.Trim(tag, " ")
+		switch tag {
+
+		case "-":
+			option = ignore
+		case "->":
+			option = readOnly
+		case "<-":
+			option = writeOnly
+		default:
+			name = tag
+		}
+	}
+	return
 }
 
 func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
@@ -570,6 +593,12 @@ func (fm *FuncMaker) structAndOther(dstT *types.Struct, src types.Type, dstSelec
 			continue
 		}
 
+		// if struct tag "cvt" exists, use struct tag
+		_, dOption := getTag(dstT.Tag(i))
+		if dOption == ignore || dOption == readOnly {
+			continue
+		}
+
 		written := fm.makeFunc(dstT.Field(i).Type(), src,
 			selectorGen(dstSelector, dstT.Field(i)),
 			srcSelector,
@@ -586,6 +615,11 @@ func (fm *FuncMaker) structAndOther(dstT *types.Struct, src types.Type, dstSelec
 func (fm *FuncMaker) otherAndStruct(dst types.Type, srcT *types.Struct, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	for j := 0; j < srcT.NumFields(); j++ {
 		if !fm.pkgVisiable(srcT.Field(j)) {
+			continue
+		}
+		// if struct tag "cvt" exists, use struct tag
+		_, sOption := getTag(srcT.Tag(j))
+		if sOption == ignore || sOption == writeOnly {
 			continue
 		}
 
@@ -609,6 +643,15 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 		if !fm.pkgVisiable(dstT.Field(i)) {
 			continue
 		}
+		// if struct tag "cvt" exists, use struct tag
+		dField, dOption := getTag(dstT.Tag(i))
+		if dField == "" {
+			dField = dstT.Field(i).Name()
+		}
+		if dOption == ignore || dOption == readOnly {
+			continue
+		}
+
 		if dstT.Field(i).Embedded() {
 			written = fm.makeFunc(dstT.Field(i).Type(), srcT,
 				selectorGen(dstSelector, dstT.Field(i)),
@@ -622,6 +665,15 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 			if !fm.pkgVisiable(srcT.Field(j)) {
 				continue
 			}
+			// if struct tag "cvt" exists, use struct tag
+			sField, sOption := getTag(srcT.Tag(j))
+			if sField == "" {
+				sField = srcT.Field(j).Name()
+			}
+			if sOption == ignore || sOption == writeOnly {
+				continue
+			}
+
 			if srcT.Field(j).Embedded() {
 				// for only once
 				if i == dstT.NumFields()-1 {
@@ -633,16 +685,6 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 					) || written
 				}
 				continue
-			}
-
-			// if struct tag "cvt" exists, use struct tag
-			dField, err := getTag(dstT.Tag(i))
-			if err != nil {
-				dField = dstT.Field(i).Name()
-			}
-			sField, err := getTag(srcT.Tag(j))
-			if err != nil {
-				sField = srcT.Field(j).Name()
 			}
 
 			if dField == sField {

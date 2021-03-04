@@ -3,5 +3,7 @@ package structtag
 
 func ConvertstructtagSrcTostructtagDst(src structtagSrc) (dst structtagDst) {
 	dst.xxxx = src.x
+	dst.read = src.read
+	dst.write = src.baz
 	return
 }
