@@ -181,6 +181,8 @@ func run(pass *codegen.Pass) error {
 		pkg:                outPkg,
 		dstWrittenSelector: map[string]struct{}{},
 	}
+	tmp := make([]*FuncMaker, 0, 10)
+	funcMaker.childFunc = &tmp
 	funcMaker.MakeFunc(dstType, srcType)
 
 	if flagOutput == "" {
@@ -287,7 +289,7 @@ type FuncMaker struct {
 	pkg string
 
 	parentFunc *FuncMaker
-	childFunc  []*FuncMaker
+	childFunc  *[]*FuncMaker
 
 	// 同じselectorに対して書き込むのは一回のみ
 	dstWrittenSelector map[string]struct{}
@@ -310,8 +312,10 @@ func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
 // WriteBytes 全ての関数を書き出す。
 func (fm *FuncMaker) WriteBytes() (out []byte) {
 	out = fm.buf.Bytes()
-	for _, child := range fm.childFunc {
-		out = append(out, child.WriteBytes()...)
+	if fm.childFunc != nil {
+		for _, child := range *fm.childFunc {
+			out = append(out, child.WriteBytes()...)
+		}
 	}
 	return
 }
@@ -392,10 +396,12 @@ func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
 		if fm.funcName == funcName {
 			return true
 		}
-		for _, child := range fm.childFunc {
-			exist := inspectSamaFuncName(child)
-			if exist {
-				return true
+		if fm.childFunc != nil {
+			for _, child := range *fm.childFunc {
+				exist := inspectSamaFuncName(child)
+				if exist {
+					return true
+				}
 			}
 		}
 		return false
@@ -440,7 +446,7 @@ func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
 	written := f(tmpFm)
 	if written {
 		fm.buf.Write(tmpFm.buf.Bytes())
-		fm.childFunc = tmpFm.childFunc
+		// fm.childFunc = tmpFm.childFunc
 		fm.dstWrittenSelector = tmpFm.dstWrittenSelector
 	}
 	return written
@@ -777,10 +783,12 @@ func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSele
 			buf:                new(bytes.Buffer),
 			pkg:                fm.pkg,
 			parentFunc:         fm,
-			childFunc:          nil,
 			dstWrittenSelector: map[string]struct{}{},
 		}
-		fm.childFunc = append(fm.childFunc, newFM)
+		tmp := make([]*FuncMaker, 0, 10)
+		newFM.childFunc = &tmp
+
+		*fm.childFunc = append(*fm.childFunc, newFM)
 		newFM.MakeFunc(dstT, srcT)
 	}
 	if funcName == fm.funcName {

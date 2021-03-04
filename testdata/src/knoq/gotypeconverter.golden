@@ -2,40 +2,45 @@
 package knoq
 
 import (
+	"time"
+
 	"github.com/gofrs/uuid"
+	"github.com/traPtitech/knoQ/dao/infra/db"
 	"github.com/traPtitech/knoQ/domain"
-	"github.com/traPtitech/knoQ/repository"
+	"gorm.io/gorm"
 )
 
-func ConvertrepositoryEventTodomainEvent(src repository.Event) (dst domain.Event) {
+func ConvertdbEventTodomainEvent(src db.Event) (dst domain.Event) {
 	dst.ID = src.ID
 	dst.Name = src.Name
 	dst.Description = src.Description
-	dst.Room = ConvertrepositoryRoomTodomainRoom(src.Room)
+	dst.Room = ConvertdbRoomTodomainRoom(src.Room)
+	dst.Group = ConvertdbGroupTodomainGroup(src.Group)
 	dst.TimeStart = src.TimeStart
 	dst.TimeEnd = src.TimeEnd
-	dst.CreatedBy = ConvertuuidUUIDTodomainUser(src.CreatedBy)
+	dst.CreatedBy = ConvertdbUserMetaTodomainUser(src.CreatedBy)
 	dst.Tags = make([]domain.EventTag, len(src.Tags))
 	for i := range src.Tags {
-		dst.Tags[i] = ConvertrepositoryTagTodomainEventTag(src.Tags[i])
+		dst.Tags[i] = ConvertdbTagTodomainEventTag(src.Tags[i])
 	}
 	dst.AllowTogether = src.AllowTogether
 	dst.Model.CreatedAt = src.Model.CreatedAt
 	dst.Model.UpdatedAt = src.Model.UpdatedAt
-	dst.Model.DeletedAt = (*src.Model.DeletedAt)
+	(*dst.Model.DeletedAt) = ConvertgormDeletedAtTotimeTime(src.Model.DeletedAt)
 	return
 }
 
-func ConvertrepositoryRoomTodomainRoom(src repository.Room) (dst domain.Room) {
+func ConvertdbRoomTodomainRoom(src db.Room) (dst domain.Room) {
 	dst.ID = src.ID
 	dst.Place = src.Place
+	dst.Verified = src.Verified
 	dst.TimeStart = src.TimeStart
 	dst.TimeEnd = src.TimeEnd
 	dst.Events = make([]domain.Event, len(src.Events))
 	for i := range src.Events {
-		dst.Events[i] = ConvertrepositoryEventTodomainEvent(src.Events[i])
+		dst.Events[i] = ConvertdbEventTodomainEvent(src.Events[i])
 	}
-	dst.CreatedBy = ConvertuuidUUIDTodomainUser(src.CreatedBy)
+	dst.CreatedBy = ConvertuuidUUIDTodomainUser(src.CreatedByRefer)
 	return
 }
 
@@ -44,9 +49,32 @@ func ConvertuuidUUIDTodomainUser(src uuid.UUID) (dst domain.User) {
 	return
 }
 
-func ConvertrepositoryTagTodomainEventTag(src repository.Tag) (dst domain.EventTag) {
+func ConvertdbGroupTodomainGroup(src db.Group) (dst domain.Group) {
+	dst.ID = src.ID
+	dst.Name = src.Name
+	dst.Description = src.Description
+	dst.JoinFreely = src.JoinFreely
+	dst.Members = make([]domain.User, len(src.Members))
+	for i := range src.Members {
+		dst.Members[i] = ConvertdbUserMetaTodomainUser(src.Members[i])
+	}
+	dst.CreatedBy = ConvertuuidUUIDTodomainUser(src.CreatedByRefer)
+	return
+}
+
+func ConvertdbUserMetaTodomainUser(src db.UserMeta) (dst domain.User) {
+	dst.ID = src.ID
+	return
+}
+
+func ConvertdbTagTodomainEventTag(src db.Tag) (dst domain.EventTag) {
 	dst.Tag.ID = src.ID
 	dst.Tag.Name = src.Name
 	dst.Locked = src.Locked
+	return
+}
+
+func ConvertgormDeletedAtTotimeTime(src gorm.DeletedAt) (dst time.Time) {
+	dst = src.Time
 	return
 }
