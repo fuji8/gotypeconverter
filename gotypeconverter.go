@@ -703,6 +703,11 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 
 	for j := 0; j < srcT.NumFields(); j++ {
 		if srcT.Field(j).Embedded() {
+			_, sOption := getTag(srcT.Tag(j))
+			if sOption == ignore || sOption == writeOnly {
+				continue
+			}
+
 			written = fm.makeFunc(dstT, srcT.Field(j).Type(),
 				dstSelector,
 				selectorGen(srcSelector, srcT.Field(j)),
