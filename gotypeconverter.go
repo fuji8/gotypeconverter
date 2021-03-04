@@ -464,7 +464,9 @@ func (fm *FuncMaker) dstWritten(dstSelector string) bool {
 	// TODO fix pointer selector
 	for sel := range fm.dstWrittenSelector {
 
-		re := regexp.MustCompile(fmt.Sprintf(`\^%s[\.\(\[]`, sel))
+		// TODO fix replace * ( ) [ ] . -> \* \( ...
+		re := regexp.MustCompile(fmt.Sprintf(`\^%s[\.\(\[]`,
+			strings.Replace(sel, "*", "\\*", -1)))
 		written := re.Match([]byte(dstSelector))
 		if written {
 			return true
