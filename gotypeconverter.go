@@ -571,7 +571,8 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Slice:
 			return fm.sliceAndSlice(dstT, srcT, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.sliceAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.sliceAndOther(dstT, src, dstSelector, srcSelector, index, history) ||
+				fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
 			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index, history)
 		default:
@@ -585,7 +586,8 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 		case *types.Named:
 			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index, history) ||
+				fm.structAndOther(dstT, src, dstSelector, srcSelector, index, history)
 		case *types.Struct:
 			return fm.structAndStruct(dstT, srcT, dstSelector, srcSelector, index, history) ||
 				fm.structAndOther(dstT, src, dstSelector, srcSelector, index, history) ||
