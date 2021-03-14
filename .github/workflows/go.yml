@@ -29,4 +29,4 @@ jobs:
         go mod tidy -v
         go test -race .
     - name: Build
-      run: go build cmd/type-converter/main.go
+      run: go build cmd/gotypeconverter/main.go
