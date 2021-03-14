@@ -34,6 +34,9 @@ Flags:
 ## 注意
 パッケージ名とディレクトリ名が一致しない場合は、`-pkg`で該当するパッケージ名を指定してください。
 
+解析が失敗した時に、`tmp*.go`のようなファイルが残る可能性があります。
+解析に使用される一時ファイルで、終了時に残ってしまった場合は消してください。
+
 ## Examples
 see [testdata](https://github.com/fuji8/gotypeconverter/tree/main/testdata/src)
 ### Basic example
