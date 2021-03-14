@@ -39,8 +39,8 @@ var (
 
 func init() {
 	Generator.Flags.StringVar(&flagOutput, "o", "", "output file; if nil, output stdout")
-	Generator.Flags.StringVar(&flagSrc, "s", "", "source struct")
-	Generator.Flags.StringVar(&flagDst, "d", "", "destination struct")
+	Generator.Flags.StringVar(&flagSrc, "s", "", "source type")
+	Generator.Flags.StringVar(&flagDst, "d", "", "destination type")
 	Generator.Flags.StringVar(&flagPkg, "pkg", "", "output package; if nil, the directoryName and packageName must be same and will be used")
 	Generator.Flags.StringVar(&flagStructTag, "structTag", "cvt", "")
 }

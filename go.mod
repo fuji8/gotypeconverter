@@ -1,6 +1,6 @@
 module github.com/fuji8/gotypeconverter
 
-go 1.15
+go 1.16
 
 require (
 	github.com/fatih/structtag v1.2.0
