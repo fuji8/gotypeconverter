@@ -4,7 +4,7 @@ gotypeconverter generates a function that converts two structurally different ty
 
 ## Install
 ```shell
-go install github.com/fuji8/gotypeconverter/cmd/gotypeconverter/
+go install github.com/fuji8/gotypeconverter/cmd/gotypeconverter
 ```
 
 ## Usage

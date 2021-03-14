@@ -4,7 +4,7 @@ gotypeconverterは構造的に異なる二つの型を変換する関数を生�
 
 ## Install
 ```shell
-go install github.com/fuji8/gotypeconverter/cmd/gotypeconverter/
+go install github.com/fuji8/gotypeconverter/cmd/gotypeconverter
 ```
 
 ## Usage
