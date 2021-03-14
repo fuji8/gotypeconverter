@@ -30,6 +30,18 @@ func ConvertdbEventTodomainEvent(src db.Event) (dst domain.Event) {
 	return
 }
 
+func ConvertdbGroupTodomainGroup(src db.Group) (dst domain.Group) {
+	dst.ID = src.ID
+	dst.Name = src.Name
+	dst.Description = src.Description
+	dst.JoinFreely = src.JoinFreely
+	dst.Members = make([]domain.User, len(src.Members))
+	for i := range src.Members {
+		dst.Members[i] = ConvertdbUserMetaTodomainUser(src.Members[i])
+	}
+	dst.CreatedBy = ConvertuuidUUIDTodomainUser(src.CreatedByRefer)
+	return
+}
 func ConvertdbRoomTodomainRoom(src db.Room) (dst domain.Room) {
 	dst.ID = src.ID
 	dst.Place = src.Place
@@ -44,37 +56,22 @@ func ConvertdbRoomTodomainRoom(src db.Room) (dst domain.Room) {
 	return
 }
 
-func ConvertuuidUUIDTodomainUser(src uuid.UUID) (dst domain.User) {
-	dst.ID = src
-	return
-}
-
-func ConvertdbGroupTodomainGroup(src db.Group) (dst domain.Group) {
-	dst.ID = src.ID
-	dst.Name = src.Name
-	dst.Description = src.Description
-	dst.JoinFreely = src.JoinFreely
-	dst.Members = make([]domain.User, len(src.Members))
-	for i := range src.Members {
-		dst.Members[i] = ConvertdbUserMetaTodomainUser(src.Members[i])
-	}
-	dst.CreatedBy = ConvertuuidUUIDTodomainUser(src.CreatedByRefer)
-	return
-}
-
-func ConvertdbUserMetaTodomainUser(src db.UserMeta) (dst domain.User) {
-	dst.ID = src.ID
-	return
-}
-
 func ConvertdbTagTodomainEventTag(src db.Tag) (dst domain.EventTag) {
 	dst.Tag.ID = src.ID
 	dst.Tag.Name = src.Name
 	dst.Locked = src.Locked
 	return
 }
+func ConvertdbUserMetaTodomainUser(src db.UserMeta) (dst domain.User) {
+	dst.ID = src.ID
+	return
+}
 
 func ConvertgormDeletedAtTotimeTime(src gorm.DeletedAt) (dst time.Time) {
 	dst = src.Time
+	return
+}
+func ConvertuuidUUIDTodomainUser(src uuid.UUID) (dst domain.User) {
+	dst.ID = src
 	return
 }

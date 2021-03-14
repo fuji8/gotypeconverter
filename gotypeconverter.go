@@ -183,8 +183,12 @@ func run(pass *codegen.Pass) error {
 
 	if flagOutput == "" {
 		buf.Write(funcMaker.WriteBytes())
+		data, err := sortFunction(buf.Bytes(), tmpFilePath)
+		if err != nil {
+			return err
+		}
 
-		src, err := imports.Process(tmpFilePath, buf.Bytes(), &imports.Options{
+		src, err := imports.Process(tmpFilePath, data, &imports.Options{
 			Fragment: true,
 			Comments: true,
 		})
@@ -247,13 +251,13 @@ func run(pass *codegen.Pass) error {
 			return err
 		}
 
-		src = dst.Bytes()
 	} else {
-		// TODO sort
 		buf.Write(funcMaker.WriteBytes())
-		src = buf.Bytes()
+		src, err = sortFunction(buf.Bytes(), flagOutput)
+		if err != nil {
+			return err
+		}
 	}
-	// TODO fix
 	src, err := imports.Process(flagOutput, src, &imports.Options{
 		Fragment: true,
 		Comments: true,
@@ -275,6 +279,31 @@ func run(pass *codegen.Pass) error {
 	}
 
 	return nil
+}
+
+func sortFunction(data []byte, fileName string) ([]byte, error) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, fileName, data, parser.ParseComments)
+	if err != nil {
+		return nil, err
+	}
+
+	// sort function
+	sort.Slice(file.Decls, func(i, j int) bool {
+		fdi, iok := file.Decls[i].(*ast.FuncDecl)
+		if !iok {
+			return true
+		}
+		fdj, jok := file.Decls[j].(*ast.FuncDecl)
+		if !jok {
+			return false
+		}
+		return fdi.Name.Name < fdj.Name.Name
+	})
+
+	dst := new(bytes.Buffer)
+	err = format.Node(dst, fset, file)
+	return dst.Bytes(), err
 }
 
 // FuncMaker generate function

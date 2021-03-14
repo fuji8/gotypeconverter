@@ -11,16 +11,15 @@ func ConvertSlicePointerpointerSrcToSlicePointerpointerDst(src []*pointerSrc) (d
 	return
 }
 
+func ConvertdeleteAtTotimeTime(src deleteAt) (dst time.Time) {
+	dst = src.Time
+	return
+}
 func ConvertpointerSrcTopointerDst(src pointerSrc) (dst pointerDst) {
 	dst.id = src.id
 	dst.dstRoomGroup.room = src.room
 	dst.dstRoomGroup.group = src.group
 	dst.dstModel.createdAt = src.srcModel.createdAt
 	(*dst.dstModel.deleteAt) = ConvertdeleteAtTotimeTime(src.srcModel.deleteAt)
-	return
-}
-
-func ConvertdeleteAtTotimeTime(src deleteAt) (dst time.Time) {
-	dst = src.Time
 	return
 }
