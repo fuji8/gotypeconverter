@@ -68,7 +68,7 @@ func ConvertbasicSrcTobasicDst(src basicSrc) (dst basicDst) {
 }
 ```
 
-フィールド名が同じもので代入します。該当する構造体タグがある場合は、フィールド名ではなく構造体タグを見ます。（[詳細はこちら](####`structAndStruct`)）
+フィールド名が同じもので代入します。該当する構造体タグがある場合は、フィールド名ではなく構造体タグを見ます。（[詳細はこちら](https://github.com/fuji8/gotypeconverter/blob/main/README_JA.md#structandstruct)）
 
 ### Normal example
 ```go normal.go
@@ -131,7 +131,7 @@ func ConvertnormalSrcTonormalDst(src normalSrc) (dst normalDst) {
 `dst.e.x`と`dst.x`は、`int`と`struct`で型が異なりますが、`dst.x.A`が`int`のため、これと代入させます。
 `dst.e.members[i]`は`uint8`で、`ug`は`uint8`のフィールドを2つ持っています。
 この場合は、一番上に書いてあるフィールドで代入されます。
-その他のフィールドに代入させたい場合は、上に書いてあるフィールドを構造体タグで`cvt:"-"`と指定してフィールドを無視させてください。（[詳細はこちら](###`Struct` )）
+その他のフィールドに代入させたい場合は、上に書いてあるフィールドを構造体タグで`cvt:"-"`と指定してフィールドを無視させてください。（[詳細はこちら](https://github.com/fuji8/gotypeconverter/blob/main/README_JA.md#struct)）
 
 
 
@@ -224,24 +224,17 @@ func ConvertxTobar(src x) (dst bar) {
 ```
 
 #### `structAndStruct`
-
-両者のフィールドを一つずつ見ていき、フィールド名（または存在すれば`cvt`の構造体タグや指定したものが優先）が一致したとき再帰します。
-
+両者のフィールドを一つずつ見ていき、フィールド名が一致したとき再帰します。
+フィールド名の代わりを構造体タグで指定出来ます。標準は`cvt`ですが、フラグ`-structTag`で自由に変更できます。
 
 ### Slice
-
 `Elem()`を見る。
 
 #### `sliceAndOther` `otherAndSlice`
-
 1番目の要素を見る。
 
 #### `sliceAndSlice`
-
 srcの分だけforでループ。
 
-
-
 ### Pointer (WIP)
-
 selectorを`(*%s)`して、`Elem()`を見る。
