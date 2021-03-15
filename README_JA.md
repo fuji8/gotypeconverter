@@ -20,15 +20,15 @@ Usage: gotypeconverter [-flag] [package]
 
 Flags:
   -d string
-        destination struct
+        destination type
   -o string
         output file; if nil, output stdout
   -pkg string
         output package; if nil, the directoryName and packageName must be same and will be used
   -s string
-        source struct
+        source type
   -structTag string
-         (default "cvt")
+         (default "cvt"))
 ```
 
 ## 注意
