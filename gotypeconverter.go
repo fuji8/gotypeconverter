@@ -834,8 +834,12 @@ func (fm *FuncMaker) pointer(pointerT *types.Pointer, selector string) (types.Ty
 }
 
 func (fm *FuncMaker) pointerAndOther(dstT *types.Pointer, src types.Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
-	dst, dstSelector := fm.pointer(dstT, dstSelector)
-	return fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
+		selector := dstSelector
+		dst, dstSelector := fm.pointer(dstT, dstSelector)
+		fmt.Fprintf(tmpFm.buf, "%s = new(%s)\n", selector, tmpFm.formatPkgType(dst))
+		return tmpFm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+	})
 }
 
 func (fm *FuncMaker) otherAndPointer(dst types.Type, srcT *types.Pointer, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
