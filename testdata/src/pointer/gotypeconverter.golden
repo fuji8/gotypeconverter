@@ -6,6 +6,7 @@ import "time"
 func ConvertSlicePointerpointerSrcToSlicePointerpointerDst(src []*pointerSrc) (dst []*pointerDst) {
 	dst = make([]*pointerDst, len(src))
 	for i := range src {
+		dst[i] = new(pointerDst)
 		(*dst[i]) = ConvertpointerSrcTopointerDst((*src[i]))
 	}
 	return
@@ -20,6 +21,7 @@ func ConvertpointerSrcTopointerDst(src pointerSrc) (dst pointerDst) {
 	dst.dstRoomGroup.room = src.room
 	dst.dstRoomGroup.group = src.group
 	dst.dstModel.createdAt = src.srcModel.createdAt
+	dst.dstModel.deleteAt = new(time.Time)
 	(*dst.dstModel.deleteAt) = ConvertdeleteAtTotimeTime(src.srcModel.deleteAt)
 	return
 }

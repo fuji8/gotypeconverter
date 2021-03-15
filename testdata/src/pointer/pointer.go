@@ -36,3 +36,18 @@ type pointerDst struct {
 	dstRoomGroup
 	dstModel
 }
+
+//func main() {
+//src := []*pointerSrc{
+//{
+//srcModel: srcModel{
+//createdAt: time.Now(),
+//deleteAt: deleteAt{
+//Time: time.Now(),
+//},
+//},
+//},
+//}
+//pointerDst := ConvertSlicePointerpointerSrcToSlicePointerpointerDst(src)
+//fmt.Println(pointerDst[0].deleteAt)
+//}

@@ -26,6 +26,7 @@ func ConvertdbEventTodomainEvent(src db.Event) (dst domain.Event) {
 	dst.AllowTogether = src.AllowTogether
 	dst.Model.CreatedAt = src.Model.CreatedAt
 	dst.Model.UpdatedAt = src.Model.UpdatedAt
+	dst.Model.DeletedAt = new(time.Time)
 	(*dst.Model.DeletedAt) = ConvertgormDeletedAtTotimeTime(src.Model.DeletedAt)
 	return
 }
