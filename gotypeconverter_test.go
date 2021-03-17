@@ -1,12 +1,12 @@
-package gotypeconverter_test
+package gotypeconverter
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
 
-	"github.com/fuji8/gotypeconverter"
 	"github.com/gostaticanalysis/codegen/codegentest"
 )
 
@@ -52,19 +52,63 @@ func TestGenerator(t *testing.T) {
 		if fi.IsDir() {
 			fv, ok := m[fi.Name()]
 			if !ok {
-				gotypeconverter.Generator.Flags.Set("s", fi.Name()+"Src")
-				gotypeconverter.Generator.Flags.Set("d", fi.Name()+"Dst")
-				gotypeconverter.Generator.Flags.Set("o", "")
+				Generator.Flags.Set("s", fi.Name()+"Src")
+				Generator.Flags.Set("d", fi.Name()+"Dst")
+				Generator.Flags.Set("o", "")
 			} else {
-				gotypeconverter.Generator.Flags.Set("s", fv.s)
-				gotypeconverter.Generator.Flags.Set("d", fv.d)
-				gotypeconverter.Generator.Flags.Set("o", fv.o)
+				Generator.Flags.Set("s", fv.s)
+				Generator.Flags.Set("d", fv.d)
+				Generator.Flags.Set("o", fv.o)
 			}
 
-			gotypeconverter.CreateTmpFile(codegentest.TestData() + "/src/" + fi.Name())
+			CreateTmpFile(codegentest.TestData() + "/src/" + fi.Name())
 
-			rs := codegentest.Run(t, codegentest.TestData(), gotypeconverter.Generator, fi.Name())
+			rs := codegentest.Run(t, codegentest.TestData(), Generator, fi.Name())
 			codegentest.Golden(t, rs, flagUpdate)
 		}
+	}
+}
+
+func Test_getTag(t *testing.T) {
+	flagStructTag = "cvt"
+	templ := "cvt:\"%s\""
+	type args struct {
+		tag string
+	}
+	tests := []struct {
+		name          string
+		args          args
+		wantName      string
+		wantReadName  string
+		wantWriteName string
+		wantOption    optionTag
+	}{
+		{
+			name: "read, write",
+			args: args{
+				tag: fmt.Sprintf(templ, "read:foo, write:bar"),
+			},
+			wantName:      "",
+			wantReadName:  "foo",
+			wantWriteName: "bar",
+			wantOption:    optionTag(0),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotName, gotReadName, gotWriteName, gotOption := getTag(tt.args.tag)
+			if gotName != tt.wantName {
+				t.Errorf("getTag() gotName = %v, want %v", gotName, tt.wantName)
+			}
+			if gotReadName != tt.wantReadName {
+				t.Errorf("getTag() gotReadName = %v, want %v", gotReadName, tt.wantReadName)
+			}
+			if gotWriteName != tt.wantWriteName {
+				t.Errorf("getTag() gotWriteName = %v, want %v", gotWriteName, tt.wantWriteName)
+			}
+			if gotOption != tt.wantOption {
+				t.Errorf("getTag() gotOption = %v, want %v", gotOption, tt.wantOption)
+			}
+		})
 	}
 }

@@ -376,7 +376,7 @@ const (
 	writeOnly
 )
 
-func getTag(tag string) (name string, option optionTag) {
+func getTag(tag string) (name, readName, writeName string, option optionTag) {
 	tags, err := structtag.Parse(tag)
 	if err != nil {
 		return
@@ -388,8 +388,17 @@ func getTag(tag string) (name string, option optionTag) {
 
 	for _, tag := range append(cvtTag.Options, cvtTag.Name) {
 		tag = strings.Trim(tag, " ")
-		switch tag {
 
+		if strings.HasPrefix(tag, "read:") {
+			readName = tag[5:]
+			continue
+		}
+		if strings.HasPrefix(tag, "write:") {
+			writeName = tag[6:]
+			continue
+		}
+
+		switch tag {
 		case "-":
 			option = ignore
 		case "->":
@@ -639,7 +648,7 @@ func (fm *FuncMaker) structAndOther(dstT *types.Struct, src types.Type, dstSelec
 		}
 
 		// if struct tag "cvt" exists, use struct tag
-		_, dOption := getTag(dstT.Tag(i))
+		_, _, _, dOption := getTag(dstT.Tag(i))
 		if dOption == ignore || dOption == readOnly {
 			continue
 		}
@@ -663,7 +672,7 @@ func (fm *FuncMaker) otherAndStruct(dst types.Type, srcT *types.Struct, dstSelec
 			continue
 		}
 		// if struct tag "cvt" exists, use struct tag
-		_, sOption := getTag(srcT.Tag(j))
+		_, _, _, sOption := getTag(srcT.Tag(j))
 		if sOption == ignore || sOption == writeOnly {
 			continue
 		}
@@ -689,7 +698,10 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 			continue
 		}
 		// if struct tag "cvt" exists, use struct tag
-		dField, dOption := getTag(dstT.Tag(i))
+		dField, _, dWriteField, dOption := getTag(dstT.Tag(i))
+		if dWriteField != "" {
+			dField = dWriteField
+		}
 		if dField == "" {
 			dField = dstT.Field(i).Name()
 		}
@@ -711,7 +723,10 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 				continue
 			}
 			// if struct tag "cvt" exists, use struct tag
-			sField, sOption := getTag(srcT.Tag(j))
+			sField, sReadField, _, sOption := getTag(srcT.Tag(j))
+			if sReadField != "" {
+				sField = sReadField
+			}
 			if sField == "" {
 				sField = srcT.Field(j).Name()
 			}
@@ -736,7 +751,7 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 
 	for j := 0; j < srcT.NumFields(); j++ {
 		if srcT.Field(j).Embedded() {
-			_, sOption := getTag(srcT.Tag(j))
+			_, _, _, sOption := getTag(srcT.Tag(j))
 			if sOption == ignore || sOption == writeOnly {
 				continue
 			}
