@@ -250,7 +250,7 @@ func run(pass *codegen.Pass) error {
 		if err != nil {
 			return err
 		}
-
+		src = dst.Bytes()
 	} else {
 		buf.Write(funcMaker.WriteBytes())
 		src, err = sortFunction(buf.Bytes(), flagOutput)
