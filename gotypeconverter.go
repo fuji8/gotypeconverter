@@ -96,9 +96,10 @@ func Init() {
 }
 
 var Generator = &codegen.Generator{
-	Name: "gotypeconverter",
-	Doc:  doc,
-	Run:  run,
+	Name:             "gotypeconverter",
+	Doc:              doc,
+	Run:              run,
+	RunDespiteErrors: true,
 }
 
 func run(pass *codegen.Pass) error {
