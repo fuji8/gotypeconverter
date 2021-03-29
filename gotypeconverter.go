@@ -694,6 +694,8 @@ func (fm *FuncMaker) otherAndStruct(dst types.Type, srcT *types.Struct, dstSelec
 func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	written := false
 
+	// field 同士の比較
+
 	for i := 0; i < dstT.NumFields(); i++ {
 		if !fm.pkgVisiable(dstT.Field(i)) {
 			continue
@@ -765,6 +767,35 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 			) || written
 		}
 	}
+
+	// 構造体自体とフィールドの比較
+
+	// TODO
+	// for j := 0; j < srcT.NumFields(); j++ {
+	// sField, sReadField, _, sOption := getTag(srcT.Tag(j))
+	// if sReadField != "" {
+	// sField = sReadField
+	// }
+	// if sField == "" {
+	// sField = srcT.Field(j).Name()
+	// }
+	// if sOption == ignore || sOption == writeOnly {
+	// continue
+	// }
+
+	// dstTName := dstT.String()
+
+	// // TODO 型名とフィールド名の何らかの関連
+	// // 情報量は構造体の方が大きいため、型名がフィールド名に含まれるなど
+	// if sField == dstTName {
+	// written = fm.makeFunc(dstT, srcT.Field(j).Type(),
+	// dstSelector,
+	// selectorGen(srcSelector, srcT.Field(j)),
+	// index,
+	// history,
+	// ) || written
+	// }
+	// }
 
 	return written
 }
