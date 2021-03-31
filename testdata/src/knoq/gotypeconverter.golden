@@ -10,7 +10,7 @@ import (
 )
 
 func ConvertdbEventAdminTodomainUser(src db.EventAdmin) (dst domain.User) {
-	dst.Privileged = src.Model.DeletedAt.Valid
+	dst.ID = src.UserID
 	return
 }
 
