@@ -809,7 +809,7 @@ func (fm *FuncMaker) sliceAndOther(dstT *types.Slice, src types.Type, dstSelecto
 
 func (fm *FuncMaker) otherAndSlice(dst types.Type, srcT *types.Slice, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
-		fmt.Fprintf(tmpFm.buf, "if len(%s)>=1 {\n", srcSelector)
+		fmt.Fprintf(tmpFm.buf, "if len(%s)>0 {\n", srcSelector)
 		written := tmpFm.makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]", index, history)
 		fmt.Fprintln(tmpFm.buf, "}")
 		return written
