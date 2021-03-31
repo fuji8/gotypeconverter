@@ -4,7 +4,7 @@ package external
 import "github.com/labstack/echo"
 
 func ConvertSliceechoEchoToexternalDst(src []echo.Echo) (dst externalDst) {
-	if len(src) >= 1 {
+	if len(src) > 0 {
 		dst.Debug = src[0].Debug
 	}
 	return

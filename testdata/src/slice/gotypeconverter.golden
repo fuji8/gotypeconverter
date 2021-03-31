@@ -2,12 +2,12 @@
 package slice
 
 func ConvertsliceSrcTosliceDst(src sliceSrc) (dst sliceDst) {
-	if len(src.ns) >= 1 {
+	if len(src.ns) > 0 {
 		dst.ns = src.ns[0]
 	}
 	dst.n = make([]float64, 1)
 	dst.n[0] = src.n
-	if len(src.arr) >= 1 {
+	if len(src.arr) > 0 {
 		dst.arr.bar = src.arr[0].bar
 	}
 	dst.strs = src.strs
