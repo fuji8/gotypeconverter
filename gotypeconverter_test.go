@@ -3,7 +3,6 @@ package gotypeconverter
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -12,12 +11,6 @@ import (
 
 var flagUpdate bool
 
-type flagValue struct {
-	s string
-	d string
-	o string
-}
-
 func TestMain(m *testing.M) {
 	flag.BoolVar(&flagUpdate, "update", false, "update the golden files")
 	flag.Parse()
@@ -25,48 +18,12 @@ func TestMain(m *testing.M) {
 }
 
 func TestGenerator(t *testing.T) {
-	m := map[string]flagValue{
-		"external": flagValue{
-			s: "[]echo.Echo",
-			d: "externalDst",
-		},
-		"pointer": flagValue{
-			s: "[]*pointerSrc",
-			d: "[]*pointerDst",
-		},
-		"samename": flagValue{
-			s: "Hoge",
-			d: "foo.Hoge",
-		},
-		"knoq": flagValue{
-			s: "db.Event",
-			d: "domain.Event",
-		},
-	}
+	Generator.Flags.Set("s", "SRC")
+	Generator.Flags.Set("d", "DST")
 
-	fileInfos, err := ioutil.ReadDir(codegentest.TestData() + "/src")
-	if err != nil {
-		panic(err)
-	}
-	for _, fi := range fileInfos {
-		if fi.IsDir() {
-			fv, ok := m[fi.Name()]
-			if !ok {
-				Generator.Flags.Set("s", fi.Name()+"Src")
-				Generator.Flags.Set("d", fi.Name()+"Dst")
-				Generator.Flags.Set("o", "")
-			} else {
-				Generator.Flags.Set("s", fv.s)
-				Generator.Flags.Set("d", fv.d)
-				Generator.Flags.Set("o", fv.o)
-			}
-
-			CreateTmpFile(codegentest.TestData() + "/src/" + fi.Name())
-
-			rs := codegentest.Run(t, codegentest.TestData(), Generator, fi.Name())
-			codegentest.Golden(t, rs, flagUpdate)
-		}
-	}
+	CreateTmpFile(codegentest.TestData() + "/src/a")
+	rs := codegentest.Run(t, codegentest.TestData(), Generator, "a")
+	codegentest.Golden(t, rs, flagUpdate)
 }
 
 func Test_getTag(t *testing.T) {
