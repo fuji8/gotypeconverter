@@ -14,7 +14,7 @@ type srcModel struct {
 	deleteAt  deleteAt
 }
 
-type pointerSrc struct {
+type SRC struct {
 	id    int
 	room  string
 	group string
@@ -31,7 +31,7 @@ type dstModel struct {
 	deleteAt  *time.Time
 }
 
-type pointerDst struct {
+type DST struct {
 	id int
 	dstRoomGroup
 	dstModel

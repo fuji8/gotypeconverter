@@ -12,7 +12,7 @@ type ug struct {
 	gaaaa  uint8
 }
 
-type normalSrc struct {
+type SRC struct {
 	x struct {
 		A int
 		B bool
@@ -26,7 +26,7 @@ type normalSrc struct {
 	members []ug
 }
 
-type normalDst struct {
+type DST struct {
 	e
 	x string
 	y int

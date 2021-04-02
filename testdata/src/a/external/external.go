@@ -7,7 +7,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-type externalDst struct {
+type DST struct {
 	Debug bool
 	pool  sync.Pool
 }

@@ -353,6 +353,8 @@ github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORN
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
+github.com/labstack/echo v3.3.10+incompatible h1:pGRcYk231ExFAyoAjAfD85kQzRJCRI8bbnE7CX5OEgg=
+github.com/labstack/echo v3.3.10+incompatible/go.mod h1:0INS7j/VjnFxD4E2wkz67b8cVwCLbBmJyDaka6Cmk1s=
 github.com/labstack/echo-contrib v0.8.1-0.20200115200653-2d4a7f3c41d8/go.mod h1:TsFE5Vv0LRpZLoh4mMmaaAxzcTH+1CBFiUtVhwlegzU=
 github.com/labstack/echo/v4 v4.1.6/go.mod h1:kU/7PwzgNxZH4das4XNsSpBSOD09XIF5YEPzjpkGnGE=
 github.com/labstack/echo/v4 v4.1.14/go.mod h1:Q5KZ1vD3V5FEzjM79hjwVrC3ABr7F5IdM23bXQMRDGg=
@@ -556,8 +558,8 @@ github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
-github.com/traPtitech/knoQ v1.2.1-0.20210329141612-de50555b1044 h1:SciFx8gqAPb1s5kdEA3d2Ilq5zArIX9i6b3LySgr/Ak=
-github.com/traPtitech/knoQ v1.2.1-0.20210329141612-de50555b1044/go.mod h1:iOutrf6ioQ5oaftBH7Oy42/wWRbg+8P4uqCrx2Tl/X8=
+github.com/traPtitech/knoQ v1.2.2-0.20210329143342-8d3640425908 h1:M8gxLcS+euPPnjxAtvLqpJzFHuCSV/7mGBECbLYvHuw=
+github.com/traPtitech/knoQ v1.2.2-0.20210329143342-8d3640425908/go.mod h1:iOutrf6ioQ5oaftBH7Oy42/wWRbg+8P4uqCrx2Tl/X8=
 github.com/traPtitech/traQ v1.0.0-rc.2.0.20210303003208-f712c5cb8389 h1:cGw2djRSDVl16DyGxBtlbQLCQUVBadUdMdQRm+Xy2eQ=
 github.com/traPtitech/traQ v1.0.0-rc.2.0.20210303003208-f712c5cb8389/go.mod h1:+br2oDY9MPi1+v6TBNCuwwg6HPieiAZb0pJ2lPy7iZA=
 github.com/uber-go/atomic v1.4.0/go.mod h1:/Ct5t2lcmbJ4OSe/waGBoaVvVqtO0bmtfVNex1PFV8g=

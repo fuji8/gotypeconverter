@@ -1,6 +1,6 @@
 package slice
 
-type sliceSrc struct {
+type SRC struct {
 	ns  []float64
 	n   float64
 	arr []struct {
@@ -15,7 +15,7 @@ type sliceSrc struct {
 	hellos []string
 }
 
-type sliceDst struct {
+type DST struct {
 	ns  float64
 	n   []float64
 	arr struct {

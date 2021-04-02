@@ -1,6 +1,6 @@
 package structtag
 
-type structtagSrc struct {
+type SRC struct {
 	foo  int
 	bar  float64
 	x    string
@@ -9,7 +9,7 @@ type structtagSrc struct {
 	baz  int
 }
 
-type structtagDst struct {
+type DST struct {
 	foo   int `cvt:"-"`
 	bar   float32
 	xxxx  string `cvt:"x"`
