@@ -1,20 +1,20 @@
 package named
 
 type roomSrc struct {
-	room  float64
-	named []SRC
+	Room  float64
+	Named []SRC
 }
 
 type roomDst struct {
-	room  float64
-	named []DST
+	Room  float64
+	Named []DST
 }
 
 type SRC struct {
-	foo  int
-	room roomSrc
+	Foo  int
+	Room roomSrc
 }
 type DST struct {
-	foo  int
-	room roomDst
+	Foo  int
+	Room roomDst
 }

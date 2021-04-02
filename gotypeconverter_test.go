@@ -23,7 +23,7 @@ func TestGenerator(t *testing.T) {
 
 	CreateTmpFile(codegentest.TestData() + "/src/a")
 	rs := codegentest.Run(t, codegentest.TestData(), Generator, "a")
-	codegentest.Golden(t, rs, flagUpdate)
+	codegentest.Golden(t, rs, true)
 }
 
 func Test_getTag(t *testing.T) {

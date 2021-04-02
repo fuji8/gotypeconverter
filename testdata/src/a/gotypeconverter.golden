@@ -5,7 +5,6 @@ import (
 	"a/basic"
 	"a/named"
 	"a/normal"
-	"a/pointer"
 	"a/samename"
 	"a/samename/foo"
 	"a/slice"
@@ -33,6 +32,8 @@ func ConvertSRCToDST(src SRC) (dst DST) {
 }
 
 func ConvertbasicSRCTobasicDST(src basic.SRC) (dst basic.DST) {
+	dst.Foo = src.Foo
+	dst.X = src.X
 	return
 }
 
@@ -138,14 +139,44 @@ func ConvertgormDeletedAtTotimeTime(src gorm.DeletedAt) (dst time.Time) {
 }
 
 func ConvertnamedSRCTonamedDST(src named.SRC) (dst named.DST) {
+	dst.Foo = src.Foo
+	dst.Room = ConvertnamedroomSrcTonamedroomDst(src.Room)
+	return
+}
+
+func ConvertnamedroomSrcTonamedroomDst(src named.roomSrc) (dst named.roomDst) {
+	dst.Room = src.Room
+	dst.Named = make([]named.DST, len(src.Named))
+	for i := range src.Named {
+		dst.Named[i] = ConvertnamedSRCTonamedDST(src.Named[i])
+	}
 	return
 }
 
 func ConvertnormalSRCTonormalDST(src normal.SRC) (dst normal.DST) {
+	dst.E.M = src.M
+	dst.E.X = src.X.A
+	dst.E.Members = make([]uint8, len(src.Members))
+	for i := range src.Members {
+		dst.E.Members[i] = src.Members[i].Uaiueo
+	}
+	dst.X = src.X.C
+	dst.Y = src.Y
+	dst.Z = src.Z
 	return
 }
 
+func ConvertpointerDeleteAtTotimeTime(src pointer.DeleteAt) (dst time.Time) {
+	dst = src.Time
+	return
+}
 func ConvertpointerSRCTopointerDST(src pointer.SRC) (dst pointer.DST) {
+	dst.ID = src.ID
+	dst.DstRoomGroup.Room = src.Room
+	dst.DstRoomGroup.Group = src.Group
+	dst.DstModel.CreatedAt = src.SrcModel.CreatedAt
+	dst.DstModel.DeleteAt = new(time.Time)
+	(*dst.DstModel.DeleteAt) = ConvertpointerDeleteAtTotimeTime(src.SrcModel.DeleteAt)
 	return
 }
 
@@ -155,9 +186,28 @@ func ConvertsamenameHogeTofooHoge(src samename.Hoge) (dst foo.Hoge) {
 }
 
 func ConvertsliceSRCTosliceDST(src slice.SRC) (dst slice.DST) {
+	if len(src.Ns) > 0 {
+		dst.Ns = src.Ns[0]
+	}
+	dst.N = make([]float64, 1)
+	dst.N[0] = src.N
+	if len(src.Arr) > 0 {
+		dst.Arr.Bar = src.Arr[0].Bar
+	}
+	dst.Strs = src.Strs
+	dst.Sarr = make([]struct {
+		Bar int
+		Hii float32
+	}, len(src.Sarr))
+	for i := range src.Sarr {
+		dst.Sarr[i].Bar = src.Sarr[i].Bar
+	}
 	return
 }
 
 func ConvertstructtagSRCTostructtagDST(src structtag.SRC) (dst structtag.DST) {
+	dst.Xxxx = src.X
+	dst.Read = src.Read
+	dst.Write = src.Baz
 	return
 }

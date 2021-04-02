@@ -1,36 +1,36 @@
 package normal
 
-type e struct {
-	e       bool
-	m       string
-	x       int
-	members []uint8
+type E struct {
+	E       bool
+	M       string
+	X       int
+	Members []uint8
 }
 
 type ug struct {
-	uaiueo uint8
-	gaaaa  uint8
+	Uaiueo uint8
+	Gaaaa  uint8
 }
 
 type SRC struct {
-	x struct {
+	X struct {
 		A int
 		B bool
 		C string
 		D string
 	}
-	y int
-	z float64
-	m string
+	Y int
+	Z float64
+	M string
 
-	members []ug
+	Members []ug
 }
 
 type DST struct {
-	e
-	x string
-	y int
-	z float64
+	E
+	X string
+	Y int
+	Z float64
 }
 
 func main() {

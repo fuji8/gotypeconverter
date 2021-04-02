@@ -1,17 +1,17 @@
 package basic
 
 type SRC struct {
-	foo int
-	bar float64
-	x   string
-	y   string
+	Foo int
+	Bar float64
+	X   string
+	Y   string
 }
 
 type DST struct {
-	foo int
-	bar float32
-	x   string
-	y   bool
+	Foo int
+	Bar float32
+	X   string
+	Y   bool
 }
 
 func main() {

@@ -1,30 +1,30 @@
 package slice
 
 type SRC struct {
-	ns  []float64
-	n   float64
-	arr []struct {
-		foo string
-		bar int
+	Ns  []float64
+	N   float64
+	Arr []struct {
+		Foo string
+		Bar int
 	}
-	strs []string
-	sarr []struct {
-		foo string
-		bar int
+	Strs []string
+	Sarr []struct {
+		Foo string
+		Bar int
 	}
-	hellos []string
+	Hellos []string
 }
 
 type DST struct {
-	ns  float64
-	n   []float64
-	arr struct {
-		bar int
+	Ns  float64
+	N   []float64
+	Arr struct {
+		Bar int
 	}
-	strs []string
-	sarr []struct {
-		bar int
-		hii float32
+	Strs []string
+	Sarr []struct {
+		Bar int
+		Hii float32
 	}
 }
 

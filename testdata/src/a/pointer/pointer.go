@@ -7,47 +7,47 @@ import (
 type sqlNullTine struct {
 	Time time.Time
 }
-type deleteAt sqlNullTine
+type DeleteAt sqlNullTine
 
-type srcModel struct {
-	createdAt time.Time
-	deleteAt  deleteAt
+type SrcModel struct {
+	CreatedAt time.Time
+	DeleteAt  DeleteAt
 }
 
 type SRC struct {
-	id    int
-	room  string
-	group string
-	srcModel
+	ID    int
+	Room  string
+	Group string
+	SrcModel
 }
 
-type dstRoomGroup struct {
-	room  string
-	group string
+type DstRoomGroup struct {
+	Room  string
+	Group string
 }
 
-type dstModel struct {
-	createdAt time.Time
-	deleteAt  *time.Time
+type DstModel struct {
+	CreatedAt time.Time
+	DeleteAt  *time.Time
 }
 
 type DST struct {
-	id int
-	dstRoomGroup
-	dstModel
+	ID int
+	DstRoomGroup
+	DstModel
 }
 
 //func main() {
 //src := []*pointerSrc{
 //{
-//srcModel: srcModel{
-//createdAt: time.Now(),
-//deleteAt: deleteAt{
+//SrcModel: SrcModel{
+//CreatedAt: time.Now(),
+//DeleteAt: DeleteAt{
 //Time: time.Now(),
 //},
 //},
 //},
 //}
 //pointerDst := ConvertSlicePointerpointerSrcToSlicePointerpointerDst(src)
-//fmt.Println(pointerDst[0].deleteAt)
+//fmt.Println(pointerDst[0].DeleteAt)
 //}
