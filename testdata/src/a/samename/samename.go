@@ -1,9 +1,9 @@
 package samename
 
 import (
+	"a/samename/bar"
+	"a/samename/foo"
 	"fmt"
-	"samename/bar"
-	"samename/foo"
 )
 
 type Hoge struct {
