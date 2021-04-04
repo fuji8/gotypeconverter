@@ -361,7 +361,7 @@ func (fm *FuncMaker) MakeFunc(dstType, srcType Type) {
 
 	fmt.Fprintf(fm.buf, "func %s(src %s) (dst %s) {\n",
 		fm.funcName, srcName, dstName)
-	fm.makeFunc(dstType, srcType, "dst", "src", "", nil)
+	fm.makeFunc(Type{typ: dstType.typ}, Type{typ: srcType.typ}, "dst", "src", "", nil)
 	fmt.Fprintf(fm.buf, "return\n}\n\n")
 }
 
@@ -481,10 +481,10 @@ func (fm *FuncMaker) pkgVisiable(field *types.Var) bool {
 	return field.Exported()
 }
 
-func (fm *FuncMaker) formatPkgType(t types.Type) string {
+func (fm *FuncMaker) formatPkgString(str string) string {
 	// TODO fix only pointer, slice and badic
 	re := regexp.MustCompile(`[\w\./]*/`)
-	last := string(re.ReplaceAll([]byte(t.String()), []byte("")))
+	last := string(re.ReplaceAll([]byte(str), []byte("")))
 
 	tmp := strings.Split(last, ".")
 	p := string(regexp.MustCompile(`\[\]|\*`).ReplaceAll([]byte(tmp[0]), []byte("")))
@@ -495,6 +495,11 @@ func (fm *FuncMaker) formatPkgType(t types.Type) string {
 		return string(re.ReplaceAll([]byte(last), []byte("")))
 	}
 	return last
+
+}
+
+func (fm *FuncMaker) formatPkgType(t types.Type) string {
+	return fm.formatPkgString(t.String())
 }
 
 func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
@@ -566,8 +571,8 @@ func (fm *FuncMaker) makeFunc(dst, src Type, dstSelector, srcSelector, index str
 	history = append(history, [2]types.Type{dst.typ, src.typ})
 
 	if types.Identical(dst.typ, src.typ) {
-		if dst.name != "" && src.name != "" {
-			fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, fm.formatPkgType(src.typ), srcSelector)
+		if (dst.name != "" && src.name != "") && dst.name != src.name {
+			fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, fm.formatPkgString(dst.name), srcSelector)
 		} else {
 			fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
 		}
