@@ -2,6 +2,7 @@ package a
 
 import (
 	"a/basic"
+	"a/cast"
 	"a/external"
 	"a/named"
 	"a/normal"
@@ -29,6 +30,7 @@ type SRC struct {
 	samename  samename.Hoge
 	slice     slice.SRC
 	structtag structtag.SRC
+	cast      cast.Foo
 }
 
 type DST struct {
@@ -41,4 +43,5 @@ type DST struct {
 	samename  foo.Hoge
 	slice     slice.DST
 	structtag structtag.DST
+	cast      cast.Bar
 }

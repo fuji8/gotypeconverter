@@ -3,6 +3,7 @@ package a
 
 import (
 	"a/basic"
+	"a/cast"
 	"a/named"
 	"a/normal"
 	"a/samename"
@@ -28,6 +29,7 @@ func ConvertSRCToDST(src SRC) (dst DST) {
 	dst.samename = ConvertsamenameHogeTofooHoge(src.samename)
 	dst.slice = ConvertsliceSRCTosliceDST(src.slice)
 	dst.structtag = ConvertstructtagSRCTostructtagDST(src.structtag)
+	dst.cast = ConvertcastFooTocastBar(src.cast)
 	return
 }
 
@@ -37,6 +39,10 @@ func ConvertbasicSRCTobasicDST(src basic.SRC) (dst basic.DST) {
 	return
 }
 
+func ConvertcastFooTocastBar(src cast.Foo) (dst cast.Bar) {
+	dst = cast.Bar(src)
+	return
+}
 func ConvertdbEventAdminTodomainUser(src db.EventAdmin) (dst domain.User) {
 	dst.ID = src.UserID
 	return
