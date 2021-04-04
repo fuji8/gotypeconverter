@@ -180,7 +180,7 @@ func run(pass *codegen.Pass) error {
 	}
 	tmp := make([]*FuncMaker, 0, 10)
 	funcMaker.childFunc = &tmp
-	funcMaker.MakeFunc(dstType, srcType)
+	funcMaker.MakeFunc(Type{typ: dstType, name: flagDst}, Type{typ: srcType, name: flagSrc})
 
 	if flagOutput == "" {
 		buf.Write(funcMaker.WriteBytes())
@@ -321,17 +321,47 @@ type FuncMaker struct {
 	dstWrittenSelector map[string]struct{}
 }
 
+type Type struct {
+	typ  types.Type
+	name string
+}
+
+type TypeStruct struct {
+	typ  *types.Struct
+	name string
+}
+
+type TypeSlice struct {
+	typ  *types.Slice
+	name string
+}
+
+type TypePointer struct {
+	typ  *types.Pointer
+	name string
+}
+
+type TypeBasic struct {
+	typ  *types.Basic
+	name string
+}
+
+type TypeNamed struct {
+	typ  *types.Named
+	name string
+}
+
 // MakeFunc make function
 // TODO fix only named type
-func (fm *FuncMaker) MakeFunc(dstType, srcType types.Type) {
-	dstName := fm.formatPkgType(dstType)
-	srcName := fm.formatPkgType(srcType)
+func (fm *FuncMaker) MakeFunc(dstType, srcType Type) {
+	dstName := fm.formatPkgType(dstType.typ)
+	srcName := fm.formatPkgType(srcType.typ)
 
-	fm.funcName = fm.getFuncName(dstType, srcType)
+	fm.funcName = fm.getFuncName(dstType.typ, srcType.typ)
 
 	fmt.Fprintf(fm.buf, "func %s(src %s) (dst %s) {\n",
 		fm.funcName, srcName, dstName)
-	fm.makeFunc(dstType, srcType, "dst", "src", "", nil)
+	fm.makeFunc(Type{typ: dstType.typ}, Type{typ: srcType.typ}, "dst", "src", "", nil)
 	fmt.Fprintf(fm.buf, "return\n}\n\n")
 }
 
@@ -451,10 +481,10 @@ func (fm *FuncMaker) pkgVisiable(field *types.Var) bool {
 	return field.Exported()
 }
 
-func (fm *FuncMaker) formatPkgType(t types.Type) string {
+func (fm *FuncMaker) formatPkgString(str string) string {
 	// TODO fix only pointer, slice and badic
 	re := regexp.MustCompile(`[\w\./]*/`)
-	last := string(re.ReplaceAll([]byte(t.String()), []byte("")))
+	last := string(re.ReplaceAll([]byte(str), []byte("")))
 
 	tmp := strings.Split(last, ".")
 	p := string(regexp.MustCompile(`\[\]|\*`).ReplaceAll([]byte(tmp[0]), []byte("")))
@@ -465,6 +495,11 @@ func (fm *FuncMaker) formatPkgType(t types.Type) string {
 		return string(re.ReplaceAll([]byte(last), []byte("")))
 	}
 	return last
+
+}
+
+func (fm *FuncMaker) formatPkgType(t types.Type) string {
+	return fm.formatPkgString(t.String())
 }
 
 func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
@@ -525,115 +560,120 @@ func (fm *FuncMaker) dstWritten(dstSelector string) bool {
 	return false
 }
 
-func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) makeFunc(dst, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	if fm.dstWritten(dstSelector) {
 		return false
 	}
 
-	if checkHistory(dst, src, history) {
+	if checkHistory(dst.typ, src.typ, history) {
 		return false
 	}
-	history = append(history, [2]types.Type{dst, src})
+	history = append(history, [2]types.Type{dst.typ, src.typ})
 
-	if types.Identical(dst, src) {
-		fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
+	if types.Identical(dst.typ, src.typ) {
+		if (dst.name != "" && src.name != "") && dst.name != src.name {
+			fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, fm.formatPkgString(dst.name), srcSelector)
+		} else {
+			fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
+		}
+
 		fm.dstWrittenSelector[dstSelector] = struct{}{}
 		return true
 	}
 
-	switch dstT := dst.(type) {
+	switch dstT := dst.typ.(type) {
 	case *types.Basic:
-		switch srcT := src.(type) {
+		switch srcT := src.typ.(type) {
 		case *types.Basic:
 		case *types.Named:
-			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndNamed(dst, TypeNamed{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndSlice(dst, TypeSlice{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndStruct(dst, TypeStruct{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndPointer(dst, TypePointer{typ: srcT}, dstSelector, srcSelector, index, history)
 		default:
 		}
 
 	case *types.Named:
-		switch srcT := src.(type) {
+		switch srcT := src.typ.(type) {
 		case *types.Basic:
-			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.namedAndOther(TypeNamed{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		case *types.Named:
-			return fm.namedAndNamed(dstT, srcT, dstSelector, srcSelector, index, history)
+			return fm.namedAndNamed(TypeNamed{typ: dstT}, TypeNamed{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.namedAndOther(TypeNamed{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.namedAndOther(TypeNamed{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.namedAndOther(TypeNamed{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		default:
-			return fm.namedAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.namedAndOther(TypeNamed{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		}
 
 	case *types.Slice:
-		switch srcT := src.(type) {
+		switch srcT := src.typ.(type) {
 		case *types.Basic:
-			return fm.sliceAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.sliceAndOther(TypeSlice{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		case *types.Named:
-			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndNamed(dst, TypeNamed{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.sliceAndSlice(dstT, srcT, dstSelector, srcSelector, index, history)
+			return fm.sliceAndSlice(TypeSlice{typ: dstT}, TypeSlice{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.sliceAndOther(dstT, src, dstSelector, srcSelector, index, history) ||
-				fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.sliceAndOther(TypeSlice{typ: dstT}, src, dstSelector, srcSelector, index, history) ||
+				fm.otherAndStruct(dst, TypeStruct{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndPointer(dst, TypePointer{typ: srcT}, dstSelector, srcSelector, index, history)
 		default:
-			return fm.sliceAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.sliceAndOther(TypeSlice{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		}
 
 	case *types.Struct:
-		switch srcT := src.(type) {
+		switch srcT := src.typ.(type) {
 		case *types.Basic:
-			return fm.structAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.structAndOther(TypeStruct{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		case *types.Named:
-			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndNamed(dst, TypeNamed{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index, history) ||
-				fm.structAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.otherAndSlice(dst, TypeSlice{typ: srcT}, dstSelector, srcSelector, index, history) ||
+				fm.structAndOther(TypeStruct{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.structAndStruct(dstT, srcT, dstSelector, srcSelector, index, history) ||
-				fm.structAndOther(dstT, src, dstSelector, srcSelector, index, history) ||
-				fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.structAndStruct(TypeStruct{typ: dstT}, TypeStruct{typ: srcT}, dstSelector, srcSelector, index, history) ||
+				fm.structAndOther(TypeStruct{typ: dstT}, src, dstSelector, srcSelector, index, history) ||
+				fm.otherAndStruct(dst, TypeStruct{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndPointer(dst, TypePointer{typ: srcT}, dstSelector, srcSelector, index, history)
 		default:
-			return fm.structAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.structAndOther(TypeStruct{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		}
 
 	case *types.Pointer:
-		switch srcT := src.(type) {
+		switch srcT := src.typ.(type) {
 		case *types.Basic:
 		case *types.Named:
-			return fm.pointerAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.pointerAndOther(TypePointer{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.pointerAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.pointerAndOther(TypePointer{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.pointerAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.pointerAndOther(TypePointer{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndPointer(dst, TypePointer{typ: srcT}, dstSelector, srcSelector, index, history)
 		default:
-			return fm.pointerAndOther(dstT, src, dstSelector, srcSelector, index, history)
+			return fm.pointerAndOther(TypePointer{typ: dstT}, src, dstSelector, srcSelector, index, history)
 		}
 
 	default:
-		switch srcT := src.(type) {
+		switch srcT := src.typ.(type) {
 		case *types.Basic:
 		case *types.Named:
-			return fm.otherAndNamed(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndNamed(dst, TypeNamed{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.otherAndSlice(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndSlice(dst, TypeSlice{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.otherAndStruct(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndStruct(dst, TypeStruct{typ: srcT}, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, srcT, dstSelector, srcSelector, index, history)
+			return fm.otherAndPointer(dst, TypePointer{typ: srcT}, dstSelector, srcSelector, index, history)
 		default:
 		}
 
@@ -642,20 +682,20 @@ func (fm *FuncMaker) makeFunc(dst, src types.Type, dstSelector, srcSelector, ind
 	return false
 }
 
-func (fm *FuncMaker) structAndOther(dstT *types.Struct, src types.Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
-	for i := 0; i < dstT.NumFields(); i++ {
-		if !fm.pkgVisiable(dstT.Field(i)) {
+func (fm *FuncMaker) structAndOther(dstT TypeStruct, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+	for i := 0; i < dstT.typ.NumFields(); i++ {
+		if !fm.pkgVisiable(dstT.typ.Field(i)) {
 			continue
 		}
 
 		// if struct tag "cvt" exists, use struct tag
-		_, _, _, dOption := getTag(dstT.Tag(i))
+		_, _, _, dOption := getTag(dstT.typ.Tag(i))
 		if dOption == ignore || dOption == readOnly {
 			continue
 		}
 
-		written := fm.makeFunc(dstT.Field(i).Type(), src,
-			selectorGen(dstSelector, dstT.Field(i)),
+		written := fm.makeFunc(Type{typ: dstT.typ.Field(i).Type()}, src,
+			selectorGen(dstSelector, dstT.typ.Field(i)),
 			srcSelector,
 			index,
 			history,
@@ -667,20 +707,20 @@ func (fm *FuncMaker) structAndOther(dstT *types.Struct, src types.Type, dstSelec
 	return false
 }
 
-func (fm *FuncMaker) otherAndStruct(dst types.Type, srcT *types.Struct, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
-	for j := 0; j < srcT.NumFields(); j++ {
-		if !fm.pkgVisiable(srcT.Field(j)) {
+func (fm *FuncMaker) otherAndStruct(dst Type, srcT TypeStruct, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+	for j := 0; j < srcT.typ.NumFields(); j++ {
+		if !fm.pkgVisiable(srcT.typ.Field(j)) {
 			continue
 		}
 		// if struct tag "cvt" exists, use struct tag
-		_, _, _, sOption := getTag(srcT.Tag(j))
+		_, _, _, sOption := getTag(srcT.typ.Tag(j))
 		if sOption == ignore || sOption == writeOnly {
 			continue
 		}
 
-		written := fm.makeFunc(dst, srcT.Field(j).Type(),
+		written := fm.makeFunc(dst, Type{typ: srcT.typ.Field(j).Type()},
 			dstSelector,
-			selectorGen(srcSelector, srcT.Field(j)),
+			selectorGen(srcSelector, srcT.typ.Field(j)),
 			index,
 			history,
 		)
@@ -691,60 +731,60 @@ func (fm *FuncMaker) otherAndStruct(dst types.Type, srcT *types.Struct, dstSelec
 	return false
 }
 
-func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) structAndStruct(dstT, srcT TypeStruct, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	written := false
 
 	// field 同士の比較
 
-	for i := 0; i < dstT.NumFields(); i++ {
-		if !fm.pkgVisiable(dstT.Field(i)) {
+	for i := 0; i < dstT.typ.NumFields(); i++ {
+		if !fm.pkgVisiable(dstT.typ.Field(i)) {
 			continue
 		}
 		// if struct tag "cvt" exists, use struct tag
-		dField, _, dWriteField, dOption := getTag(dstT.Tag(i))
+		dField, _, dWriteField, dOption := getTag(dstT.typ.Tag(i))
 		if dWriteField != "" {
 			dField = dWriteField
 		}
 		if dField == "" {
-			dField = dstT.Field(i).Name()
+			dField = dstT.typ.Field(i).Name()
 		}
 		if dOption == ignore || dOption == readOnly {
 			continue
 		}
 
-		if dstT.Field(i).Embedded() {
-			written = fm.makeFunc(dstT.Field(i).Type(), srcT,
-				selectorGen(dstSelector, dstT.Field(i)),
+		if dstT.typ.Field(i).Embedded() {
+			written = fm.makeFunc(Type{typ: dstT.typ.Field(i).Type()}, Type{typ: srcT.typ, name: srcT.name},
+				selectorGen(dstSelector, dstT.typ.Field(i)),
 				srcSelector,
 				index,
 				history,
 			) || written
 			continue
 		}
-		for j := 0; j < srcT.NumFields(); j++ {
-			if !fm.pkgVisiable(srcT.Field(j)) {
+		for j := 0; j < srcT.typ.NumFields(); j++ {
+			if !fm.pkgVisiable(srcT.typ.Field(j)) {
 				continue
 			}
 			// if struct tag "cvt" exists, use struct tag
-			sField, sReadField, _, sOption := getTag(srcT.Tag(j))
+			sField, sReadField, _, sOption := getTag(srcT.typ.Tag(j))
 			if sReadField != "" {
 				sField = sReadField
 			}
 			if sField == "" {
-				sField = srcT.Field(j).Name()
+				sField = srcT.typ.Field(j).Name()
 			}
 			if sOption == ignore || sOption == writeOnly {
 				continue
 			}
 
-			if srcT.Field(j).Embedded() {
+			if srcT.typ.Field(j).Embedded() {
 				continue
 			}
 
 			if dField == sField {
-				written = fm.makeFunc(dstT.Field(i).Type(), srcT.Field(j).Type(),
-					selectorGen(dstSelector, dstT.Field(i)),
-					selectorGen(srcSelector, srcT.Field(j)),
+				written = fm.makeFunc(Type{typ: dstT.typ.Field(i).Type()}, Type{typ: srcT.typ.Field(j).Type()},
+					selectorGen(dstSelector, dstT.typ.Field(i)),
+					selectorGen(srcSelector, srcT.typ.Field(j)),
 					index,
 					history,
 				) || written
@@ -752,16 +792,16 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 		}
 	}
 
-	for j := 0; j < srcT.NumFields(); j++ {
-		if srcT.Field(j).Embedded() {
-			_, _, _, sOption := getTag(srcT.Tag(j))
+	for j := 0; j < srcT.typ.NumFields(); j++ {
+		if srcT.typ.Field(j).Embedded() {
+			_, _, _, sOption := getTag(srcT.typ.Tag(j))
 			if sOption == ignore || sOption == writeOnly {
 				continue
 			}
 
-			written = fm.makeFunc(dstT, srcT.Field(j).Type(),
+			written = fm.makeFunc(Type{typ: dstT.typ, name: dstT.name}, Type{typ: srcT.typ.Field(j).Type()},
 				dstSelector,
-				selectorGen(srcSelector, srcT.Field(j)),
+				selectorGen(srcSelector, srcT.typ.Field(j)),
 				index,
 				history,
 			) || written
@@ -800,29 +840,29 @@ func (fm *FuncMaker) structAndStruct(dstT *types.Struct, srcT *types.Struct, dst
 	return written
 }
 
-func (fm *FuncMaker) sliceAndOther(dstT *types.Slice, src types.Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) sliceAndOther(dstT TypeSlice, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
-		fmt.Fprintf(tmpFm.buf, "%s = make(%s, 1)\n", dstSelector, fm.formatPkgType(dstT))
-		return tmpFm.makeFunc(dstT.Elem(), src, dstSelector+"[0]", srcSelector, index, history)
+		fmt.Fprintf(tmpFm.buf, "%s = make(%s, 1)\n", dstSelector, fm.formatPkgType(dstT.typ))
+		return tmpFm.makeFunc(Type{typ: dstT.typ.Elem()}, src, dstSelector+"[0]", srcSelector, index, history)
 	})
 }
 
-func (fm *FuncMaker) otherAndSlice(dst types.Type, srcT *types.Slice, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) otherAndSlice(dst Type, srcT TypeSlice, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
 		fmt.Fprintf(tmpFm.buf, "if len(%s)>0 {\n", srcSelector)
-		written := tmpFm.makeFunc(dst, srcT.Elem(), dstSelector, srcSelector+"[0]", index, history)
+		written := tmpFm.makeFunc(dst, Type{typ: srcT.typ.Elem()}, dstSelector, srcSelector+"[0]", index, history)
 		fmt.Fprintln(tmpFm.buf, "}")
 		return written
 	})
 }
 
-func (fm *FuncMaker) sliceAndSlice(dstT *types.Slice, srcT *types.Slice, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) sliceAndSlice(dstT, srcT TypeSlice, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	index = nextIndex(index)
 
 	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
-		fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dstT), srcSelector)
+		fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dstT.typ), srcSelector)
 		fmt.Fprintf(tmpFm.buf, "for %s := range %s {\n", index, srcSelector)
-		written := tmpFm.makeFunc(dstT.Elem(), srcT.Elem(),
+		written := tmpFm.makeFunc(Type{typ: dstT.typ.Elem()}, Type{typ: srcT.typ.Elem()},
 			dstSelector+"["+index+"]",
 			srcSelector+"["+index+"]",
 			index,
@@ -836,22 +876,22 @@ func (fm *FuncMaker) sliceAndSlice(dstT *types.Slice, srcT *types.Slice, dstSele
 	})
 }
 
-func (fm *FuncMaker) named(namedT *types.Named, selector string) (types.Type, string) {
-	return namedT.Underlying(), selector
+func (fm *FuncMaker) named(namedT TypeNamed, selector string) (Type, string) {
+	return Type{typ: namedT.typ.Underlying(), name: namedT.typ.String()}, selector
 }
 
-func (fm *FuncMaker) namedAndOther(dstT *types.Named, src types.Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) namedAndOther(dstT TypeNamed, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	dst, dstSelector := fm.named(dstT, dstSelector)
 	return fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 }
 
-func (fm *FuncMaker) otherAndNamed(dst types.Type, srcT *types.Named, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) otherAndNamed(dst Type, srcT TypeNamed, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	src, srcSelector := fm.named(srcT, srcSelector)
 	return fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 }
 
-func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
-	funcName := fm.getFuncName(dstT, srcT)
+func (fm *FuncMaker) namedAndNamed(dstT, srcT TypeNamed, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+	funcName := fm.getFuncName(dstT.typ, srcT.typ)
 	if !fm.isAlreadyExist(funcName) {
 		newFM := &FuncMaker{
 			buf:                new(bytes.Buffer),
@@ -863,10 +903,10 @@ func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSele
 		newFM.childFunc = &tmp
 
 		*fm.childFunc = append(*fm.childFunc, newFM)
-		newFM.MakeFunc(dstT, srcT)
+		newFM.MakeFunc(Type{typ: dstT.typ, name: dstT.name}, Type{typ: srcT.typ, name: srcT.name})
 	}
 	if funcName == fm.funcName {
-		return fm.makeFunc(dstT.Underlying(), srcT.Underlying(), dstSelector, srcSelector, index, history)
+		return fm.makeFunc(Type{typ: dstT.typ.Underlying(), name: dstT.typ.String()}, Type{typ: srcT.typ.Underlying(), name: srcT.typ.String()}, dstSelector, srcSelector, index, history)
 	}
 
 	fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
@@ -876,25 +916,25 @@ func (fm *FuncMaker) namedAndNamed(dstT *types.Named, srcT *types.Named, dstSele
 
 // TODO fix pointer
 
-func (fm *FuncMaker) pointer(pointerT *types.Pointer, selector string) (types.Type, string) {
-	return pointerT.Elem(), fmt.Sprintf("(*%s)", selector)
+func (fm *FuncMaker) pointer(pointerT TypePointer, selector string) (Type, string) {
+	return Type{typ: pointerT.typ.Elem()}, fmt.Sprintf("(*%s)", selector)
 }
 
-func (fm *FuncMaker) pointerAndOther(dstT *types.Pointer, src types.Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) pointerAndOther(dstT TypePointer, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
 		selector := dstSelector
 		dst, dstSelector := fm.pointer(dstT, dstSelector)
-		fmt.Fprintf(tmpFm.buf, "%s = new(%s)\n", selector, tmpFm.formatPkgType(dst))
+		fmt.Fprintf(tmpFm.buf, "%s = new(%s)\n", selector, tmpFm.formatPkgType(dst.typ))
 		return tmpFm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 	})
 }
 
-func (fm *FuncMaker) otherAndPointer(dst types.Type, srcT *types.Pointer, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) otherAndPointer(dst Type, srcT TypePointer, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	src, srcSelector := fm.pointer(srcT, srcSelector)
 	return fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 }
 
-func (fm *FuncMaker) pointerAndPointer(dstT *types.Pointer, srcT *types.Pointer, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) pointerAndPointer(dstT, srcT TypePointer, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	dst, dstSelector := fm.pointer(dstT, dstSelector)
 	src, srcSelector := fm.pointer(srcT, srcSelector)
 	return fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
