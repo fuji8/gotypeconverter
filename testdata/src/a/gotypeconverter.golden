@@ -4,6 +4,7 @@ package a
 import (
 	"a/basic"
 	"a/cast"
+	"a/ignoretags"
 	"a/named"
 	"a/normal"
 	"a/samename"
@@ -30,6 +31,7 @@ func ConvertSRCToDST(src SRC) (dst DST) {
 	dst.slice = ConvertsliceSRCTosliceDST(src.slice)
 	dst.structtag = ConvertstructtagSRCTostructtagDST(src.structtag)
 	dst.cast = ConvertcastFooTocastBar(src.cast)
+	dst.ignoretags = ConvertignoretagsSRCToignoretagsDST(src.ignoretags)
 	return
 }
 
@@ -144,6 +146,10 @@ func ConvertgormDeletedAtTotimeTime(src gorm.DeletedAt) (dst time.Time) {
 	return
 }
 
+func ConvertignoretagsSRCToignoretagsDST(src ignoretags.SRC) (dst ignoretags.DST) {
+	dst = ignoretags.DST(src)
+	return
+}
 func ConvertnamedSRCTonamedDST(src named.SRC) (dst named.DST) {
 	dst.Foo = src.Foo
 	dst.Room = ConvertnamedroomSrcTonamedroomDst(src.Room)
