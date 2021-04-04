@@ -4,6 +4,7 @@ import (
 	"a/basic"
 	"a/cast"
 	"a/external"
+	"a/ignoretags"
 	"a/named"
 	"a/normal"
 	"a/pointer"
@@ -22,29 +23,31 @@ import (
 // 他のフィールドに依存しない結果が得られることを利用
 
 type SRC struct {
-	basic     basic.SRC
-	external  []echo.Echo
-	knoq      db.Event
-	named     named.SRC
-	normal    normal.SRC
-	pointer   pointer.SRC
-	samename  samename.Hoge
-	slice     slice.SRC
-	structtag structtag.SRC
-	cast      cast.Foo
+	basic      basic.SRC
+	external   []echo.Echo
+	knoq       db.Event
+	named      named.SRC
+	normal     normal.SRC
+	pointer    pointer.SRC
+	samename   samename.Hoge
+	slice      slice.SRC
+	structtag  structtag.SRC
+	cast       cast.Foo
+	ignoretags ignoretags.SRC
 }
 
 type DST struct {
-	basic     basic.DST
-	external  external.DST
-	knoq      domain.Event
-	named     named.DST
-	normal    normal.DST
-	pointer   pointer.DST
-	samename  foo.Hoge
-	slice     slice.DST
-	structtag structtag.DST
-	cast      cast.Bar
+	basic      basic.DST
+	external   external.DST
+	knoq       domain.Event
+	named      named.DST
+	normal     normal.DST
+	pointer    pointer.DST
+	samename   foo.Hoge
+	slice      slice.DST
+	structtag  structtag.DST
+	cast       cast.Bar
+	ignoretags ignoretags.DST
 }
 
 type A struct {
