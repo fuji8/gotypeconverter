@@ -8,7 +8,6 @@ import (
 	"a/named"
 	"a/normal"
 	"a/samename"
-	"a/samename/foo"
 	"a/slice"
 	"a/structtag"
 	"time"
@@ -28,6 +27,7 @@ func ConvSRCToDST(src SRC) (dst DST) {
 	dst.normal = ConvnormalSRCTonormalDST(src.normal)
 	dst.pointer = ConvpointerSRCTopointerDST(src.pointer)
 	dst.samename = ConvsamenameHogeTofooHoge(src.samename)
+	dst.samename2 = ConvsamenameSRCTofooDST(src.samename2)
 	dst.slice = ConvsliceSRCTosliceDST(src.slice)
 	dst.structtag = ConvstructtagSRCTostructtagDST(src.structtag)
 	dst.cast = ConvcastFooTocastBar(src.cast)
@@ -194,6 +194,11 @@ func ConvpointerSRCTopointerDST(src pointer.SRC) (dst pointer.DST) {
 
 func ConvsamenameHogeTofooHoge(src samename.Hoge) (dst foo.Hoge) {
 	dst.A = src.A
+	return
+}
+
+func ConvsamenameSRCTofooDST(src samename.SRC) (dst foo.DST) {
+	dst.Huga = foo.Huga(src.Huga)
 	return
 }
 
