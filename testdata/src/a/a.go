@@ -30,6 +30,7 @@ type SRC struct {
 	normal     normal.SRC
 	pointer    pointer.SRC
 	samename   samename.Hoge
+	samename2  samename.SRC
 	slice      slice.SRC
 	structtag  structtag.SRC
 	cast       cast.Foo
@@ -44,6 +45,7 @@ type DST struct {
 	normal     normal.DST
 	pointer    pointer.DST
 	samename   foo.Hoge
+	samename2  foo.DST
 	slice      slice.DST
 	structtag  structtag.DST
 	cast       cast.Bar

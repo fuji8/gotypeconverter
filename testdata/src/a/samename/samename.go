@@ -11,6 +11,14 @@ type Hoge struct {
 	b string
 }
 
+type Huga struct {
+	C int
+}
+
+type SRC struct {
+	Huga
+}
+
 func main() {
 	fmt.Println(bar.Hoge{}, foo.Hoge{})
 }

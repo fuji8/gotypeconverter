@@ -587,94 +587,94 @@ func (fm *FuncMaker) makeFunc(dst, src Type, dstSelector, srcSelector, index str
 		switch srcT := src.typ.(type) {
 		case *types.Basic:
 		case *types.Named:
-			return fm.otherAndNamed(dst, TypeNamed{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndNamed(dst, TypeNamed{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.otherAndSlice(dst, TypeSlice{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndSlice(dst, TypeSlice{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.otherAndStruct(dst, TypeStruct{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndStruct(dst, TypeStruct{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, TypePointer{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndPointer(dst, TypePointer{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		default:
 		}
 
 	case *types.Named:
 		switch srcT := src.typ.(type) {
 		case *types.Basic:
-			return fm.namedAndOther(TypeNamed{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.namedAndOther(TypeNamed{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		case *types.Named:
-			return fm.namedAndNamed(TypeNamed{typ: dstT}, TypeNamed{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.namedAndNamed(TypeNamed{typ: dstT, name: dst.name}, TypeNamed{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.namedAndOther(TypeNamed{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.namedAndOther(TypeNamed{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.namedAndOther(TypeNamed{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.namedAndOther(TypeNamed{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.namedAndOther(TypeNamed{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.namedAndOther(TypeNamed{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		default:
-			return fm.namedAndOther(TypeNamed{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.namedAndOther(TypeNamed{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		}
 
 	case *types.Slice:
 		switch srcT := src.typ.(type) {
 		case *types.Basic:
-			return fm.sliceAndOther(TypeSlice{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.sliceAndOther(TypeSlice{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		case *types.Named:
-			return fm.otherAndNamed(dst, TypeNamed{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndNamed(dst, TypeNamed{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.sliceAndSlice(TypeSlice{typ: dstT}, TypeSlice{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.sliceAndSlice(TypeSlice{typ: dstT, name: dst.name}, TypeSlice{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.sliceAndOther(TypeSlice{typ: dstT}, src, dstSelector, srcSelector, index, history) ||
-				fm.otherAndStruct(dst, TypeStruct{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.sliceAndOther(TypeSlice{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history) ||
+				fm.otherAndStruct(dst, TypeStruct{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, TypePointer{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndPointer(dst, TypePointer{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		default:
-			return fm.sliceAndOther(TypeSlice{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.sliceAndOther(TypeSlice{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		}
 
 	case *types.Struct:
 		switch srcT := src.typ.(type) {
 		case *types.Basic:
-			return fm.structAndOther(TypeStruct{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.structAndOther(TypeStruct{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		case *types.Named:
-			return fm.otherAndNamed(dst, TypeNamed{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndNamed(dst, TypeNamed{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.otherAndSlice(dst, TypeSlice{typ: srcT}, dstSelector, srcSelector, index, history) ||
-				fm.structAndOther(TypeStruct{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.otherAndSlice(dst, TypeSlice{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history) ||
+				fm.structAndOther(TypeStruct{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.structAndStruct(TypeStruct{typ: dstT}, TypeStruct{typ: srcT}, dstSelector, srcSelector, index, history) ||
-				fm.structAndOther(TypeStruct{typ: dstT}, src, dstSelector, srcSelector, index, history) ||
-				fm.otherAndStruct(dst, TypeStruct{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.structAndStruct(TypeStruct{typ: dstT, name: dst.name}, TypeStruct{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history) ||
+				fm.structAndOther(TypeStruct{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history) ||
+				fm.otherAndStruct(dst, TypeStruct{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, TypePointer{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndPointer(dst, TypePointer{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		default:
-			return fm.structAndOther(TypeStruct{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.structAndOther(TypeStruct{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		}
 
 	case *types.Pointer:
 		switch srcT := src.typ.(type) {
 		case *types.Basic:
 		case *types.Named:
-			return fm.pointerAndOther(TypePointer{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.pointerAndOther(TypePointer{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.pointerAndOther(TypePointer{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.pointerAndOther(TypePointer{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.pointerAndOther(TypePointer{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.pointerAndOther(TypePointer{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, TypePointer{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndPointer(dst, TypePointer{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		default:
-			return fm.pointerAndOther(TypePointer{typ: dstT}, src, dstSelector, srcSelector, index, history)
+			return fm.pointerAndOther(TypePointer{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		}
 
 	default:
 		switch srcT := src.typ.(type) {
 		case *types.Basic:
 		case *types.Named:
-			return fm.otherAndNamed(dst, TypeNamed{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndNamed(dst, TypeNamed{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Slice:
-			return fm.otherAndSlice(dst, TypeSlice{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndSlice(dst, TypeSlice{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Struct:
-			return fm.otherAndStruct(dst, TypeStruct{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndStruct(dst, TypeStruct{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, TypePointer{typ: srcT}, dstSelector, srcSelector, index, history)
+			return fm.otherAndPointer(dst, TypePointer{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		default:
 		}
 
