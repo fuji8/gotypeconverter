@@ -385,14 +385,14 @@ func (fm *FuncMaker) getFuncName(dstType, srcType types.Type) string {
 	dstName = string(re.ReplaceAll([]byte(dstName), []byte("")))
 
 	re = regexp.MustCompile(`\[\]`)
-	srcName = string(re.ReplaceAll([]byte(srcName), []byte("Slice")))
-	dstName = string(re.ReplaceAll([]byte(dstName), []byte("Slice")))
+	srcName = string(re.ReplaceAll([]byte(srcName), []byte("S")))
+	dstName = string(re.ReplaceAll([]byte(dstName), []byte("S")))
 
 	re = regexp.MustCompile(`\*`)
-	srcName = string(re.ReplaceAll([]byte(srcName), []byte("Pointer")))
-	dstName = string(re.ReplaceAll([]byte(dstName), []byte("Pointer")))
+	srcName = string(re.ReplaceAll([]byte(srcName), []byte("P")))
+	dstName = string(re.ReplaceAll([]byte(dstName), []byte("P")))
 
-	return fmt.Sprintf("Convert%sTo%s", srcName, dstName)
+	return fmt.Sprintf("Conv%sTo%s", srcName, dstName)
 }
 
 func selectorGen(selector string, field *types.Var) string {
