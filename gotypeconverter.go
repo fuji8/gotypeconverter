@@ -572,7 +572,7 @@ func (fm *FuncMaker) makeFunc(dst, src Type, dstSelector, srcSelector, index str
 	history = append(history, [2]types.Type{dst.typ, src.typ})
 
 	if types.IdenticalIgnoreTags(dst.typ, src.typ) {
-		if (dst.name != "" && src.name != "") && dst.name != src.name {
+		if dst.name != "" && dst.name != src.name {
 			fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, fm.formatPkgString(dst.name), srcSelector)
 		} else {
 			fmt.Fprintf(fm.buf, "%s = %s\n", dstSelector, srcSelector)
