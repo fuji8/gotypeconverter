@@ -474,6 +474,7 @@ func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
 	return inspectSamaFuncName(root)
 }
 
+// TODO *types.Var -> *types.Package
 func (fm *FuncMaker) pkgVisiable(field *types.Var) bool {
 	if fm.pkg.Path() == field.Pkg().Path() {
 		return true
@@ -877,6 +878,7 @@ func (fm *FuncMaker) sliceAndSlice(dstT, srcT TypeSlice, dstSelector, srcSelecto
 }
 
 func (fm *FuncMaker) named(namedT TypeNamed, selector string) (Type, string) {
+	namedT.typ.Obj().Pkg()
 	return Type{typ: namedT.typ.Underlying(), name: namedT.typ.String()}, selector
 }
 
