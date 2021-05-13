@@ -25,7 +25,10 @@ func ConvSRCToDST(src SRC) (dst DST) {
 	dst.knoq = ConvdbEventTodomainEvent(src.knoq)
 	dst.named = ConvnamedSRCTonamedDST(src.named)
 	dst.normal = ConvnormalSRCTonormalDST(src.normal)
-	dst.pointer = ConvpointerSRCTopointerDST(src.pointer)
+	if src.pointer != nil {
+		dst.pointer = new(pointer.DST)
+		(*dst.pointer) = ConvpointerSRCTopointerDST((*src.pointer))
+	}
 	dst.samename = ConvsamenameHogeTofooHoge(src.samename)
 	dst.samename2 = ConvsamenameSRCTofooDST(src.samename2)
 	dst.slice = ConvsliceSRCTosliceDST(src.slice)
