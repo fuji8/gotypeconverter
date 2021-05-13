@@ -936,7 +936,7 @@ func (fm *FuncMaker) otherAndPointer(dst Type, srcT TypePointer, dstSelector, sr
 		fmt.Fprintf(tmpFm.buf, "if %s != nil {\n", srcSelector)
 
 		src, srcSelector := fm.pointer(srcT, srcSelector)
-		written := fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+		written := tmpFm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 
 		fmt.Fprintf(tmpFm.buf, "}\n")
 		return written
