@@ -28,7 +28,7 @@ type SRC struct {
 	knoq       db.Event
 	named      named.SRC
 	normal     normal.SRC
-	pointer    pointer.SRC
+	pointer    *pointer.SRC
 	samename   samename.Hoge
 	samename2  samename.SRC
 	slice      slice.SRC
@@ -43,7 +43,7 @@ type DST struct {
 	knoq       domain.Event
 	named      named.DST
 	normal     normal.DST
-	pointer    pointer.DST
+	pointer    *pointer.DST
 	samename   foo.Hoge
 	samename2  foo.DST
 	slice      slice.DST

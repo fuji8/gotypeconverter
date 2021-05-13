@@ -659,7 +659,7 @@ func (fm *FuncMaker) makeFunc(dst, src Type, dstSelector, srcSelector, index str
 		case *types.Struct:
 			return fm.pointerAndOther(TypePointer{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		case *types.Pointer:
-			return fm.otherAndPointer(dst, TypePointer{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
+			return fm.pointerAndPointer(TypePointer{typ: dstT, name: dst.name}, TypePointer{typ: srcT, name: src.name}, dstSelector, srcSelector, index, history)
 		default:
 			return fm.pointerAndOther(TypePointer{typ: dstT, name: dst.name}, src, dstSelector, srcSelector, index, history)
 		}
@@ -932,12 +932,28 @@ func (fm *FuncMaker) pointerAndOther(dstT TypePointer, src Type, dstSelector, sr
 }
 
 func (fm *FuncMaker) otherAndPointer(dst Type, srcT TypePointer, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
-	src, srcSelector := fm.pointer(srcT, srcSelector)
-	return fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
+		fmt.Fprintf(tmpFm.buf, "if %s != nil {\n", srcSelector)
+
+		src, srcSelector := fm.pointer(srcT, srcSelector)
+		written := fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+
+		fmt.Fprintf(tmpFm.buf, "}\n")
+		return written
+	})
 }
 
 func (fm *FuncMaker) pointerAndPointer(dstT, srcT TypePointer, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
-	dst, dstSelector := fm.pointer(dstT, dstSelector)
-	src, srcSelector := fm.pointer(srcT, srcSelector)
-	return fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
+		fmt.Fprintf(tmpFm.buf, "if %s != nil {\n", srcSelector)
+
+		selector := dstSelector
+		dst, dstSelector := fm.pointer(dstT, dstSelector)
+		fmt.Fprintf(tmpFm.buf, "%s = new(%s)\n", selector, tmpFm.formatPkgType(dst.typ))
+		src, srcSelector := fm.pointer(srcT, srcSelector)
+		written := tmpFm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+
+		fmt.Fprintf(tmpFm.buf, "}\n")
+		return written
+	})
 }
