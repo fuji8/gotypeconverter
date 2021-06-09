@@ -1,15 +1,20 @@
 package analysis
 
 import (
+	"errors"
 	"fmt"
 	"go/types"
 	"regexp"
 	"strings"
 )
 
-func (fm *FuncMaker) getFuncName(dstType, srcType types.Type) string {
-	dstName := fm.formatPkgType(dstType)
-	srcName := fm.formatPkgType(srcType)
+func (fm *FuncMaker) getFuncName(dstType, srcType types.Type) (string, error) {
+	dstName, derr := fm.formatPkgType(dstType)
+	srcName, serr := fm.formatPkgType(srcType)
+	var err error
+	if derr != nil || serr != nil {
+		err = errors.New("cannot type")
+	}
 
 	re := regexp.MustCompile(`\.`)
 	srcName = string(re.ReplaceAll([]byte(srcName), []byte("")))
@@ -23,7 +28,7 @@ func (fm *FuncMaker) getFuncName(dstType, srcType types.Type) string {
 	srcName = string(re.ReplaceAll([]byte(srcName), []byte("P")))
 	dstName = string(re.ReplaceAll([]byte(dstName), []byte("P")))
 
-	return fmt.Sprintf("Conv%sTo%s", srcName, dstName)
+	return fmt.Sprintf("Conv%sTo%s", srcName, dstName), err
 }
 
 func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
@@ -57,14 +62,25 @@ func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
 	return inspectSamaFuncName(root)
 }
 
-// TODO *types.Var -> *types.Package
-func (fm *FuncMaker) pkgVisiable(field *types.Var) bool {
-	if fm.pkg.Path() == field.Pkg().Path() {
+func (fm *FuncMaker) varVisiable(v *types.Var) bool {
+	if fm.samePkg(v.Pkg()) {
 		return true
 	}
-	return field.Exported()
+	return v.Exported()
 }
 
+func (fm *FuncMaker) typeNameVisiable(v *types.TypeName) bool {
+	if fm.samePkg(v.Pkg()) {
+		return true
+	}
+	return v.Exported()
+}
+
+func (fm *FuncMaker) samePkg(pkg *types.Package) bool {
+	return fm.pkg.Path() == pkg.Path()
+}
+
+// TODO fix
 func (fm *FuncMaker) formatPkgString(str string) string {
 	// TODO fix only pointer, slice and badic
 	re := regexp.MustCompile(`[\w\./]*/`)
@@ -79,11 +95,15 @@ func (fm *FuncMaker) formatPkgString(str string) string {
 		return string(re.ReplaceAll([]byte(last), []byte("")))
 	}
 	return last
-
 }
 
-func (fm *FuncMaker) formatPkgType(t types.Type) string {
-	return fm.formatPkgString(t.String())
+func (fm *FuncMaker) formatPkgType(t types.Type) (string, error) {
+	if namedT, ok := t.(*types.Named); ok {
+		if !fm.typeNameVisiable(namedT.Obj()) {
+			return "", errors.New("not exported")
+		}
+	}
+	return fm.formatPkgString(t.String()), nil
 }
 
 // 無限ループを防ぐ

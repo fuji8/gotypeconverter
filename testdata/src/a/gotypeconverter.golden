@@ -155,16 +155,6 @@ func ConvignoretagsSRCToignoretagsDST(src ignoretags.SRC) (dst ignoretags.DST) {
 }
 func ConvnamedSRCTonamedDST(src named.SRC) (dst named.DST) {
 	dst.Foo = src.Foo
-	dst.Room = ConvnamedroomSrcTonamedroomDst(src.Room)
-	return
-}
-
-func ConvnamedroomSrcTonamedroomDst(src named.roomSrc) (dst named.roomDst) {
-	dst.Room = src.Room
-	dst.Named = make([]named.DST, len(src.Named))
-	for i := range src.Named {
-		dst.Named[i] = ConvnamedSRCTonamedDST(src.Named[i])
-	}
 	return
 }
 

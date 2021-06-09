@@ -45,7 +45,7 @@ type TypeNamed struct {
 
 func (fm *FuncMaker) structAndOther(dstT TypeStruct, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	for i := 0; i < dstT.typ.NumFields(); i++ {
-		if !fm.pkgVisiable(dstT.typ.Field(i)) {
+		if !fm.varVisiable(dstT.typ.Field(i)) {
 			continue
 		}
 
@@ -70,7 +70,7 @@ func (fm *FuncMaker) structAndOther(dstT TypeStruct, src Type, dstSelector, srcS
 
 func (fm *FuncMaker) otherAndStruct(dst Type, srcT TypeStruct, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	for j := 0; j < srcT.typ.NumFields(); j++ {
-		if !fm.pkgVisiable(srcT.typ.Field(j)) {
+		if !fm.varVisiable(srcT.typ.Field(j)) {
 			continue
 		}
 		// if struct tag "cvt" exists, use struct tag
@@ -98,7 +98,7 @@ func (fm *FuncMaker) structAndStruct(dstT, srcT TypeStruct, dstSelector, srcSele
 	// field 同士の比較
 
 	for i := 0; i < dstT.typ.NumFields(); i++ {
-		if !fm.pkgVisiable(dstT.typ.Field(i)) {
+		if !fm.varVisiable(dstT.typ.Field(i)) {
 			continue
 		}
 		// if struct tag "cvt" exists, use struct tag
@@ -123,7 +123,7 @@ func (fm *FuncMaker) structAndStruct(dstT, srcT TypeStruct, dstSelector, srcSele
 			continue
 		}
 		for j := 0; j < srcT.typ.NumFields(); j++ {
-			if !fm.pkgVisiable(srcT.typ.Field(j)) {
+			if !fm.varVisiable(srcT.typ.Field(j)) {
 				continue
 			}
 			// if struct tag "cvt" exists, use struct tag
@@ -203,7 +203,11 @@ func (fm *FuncMaker) structAndStruct(dstT, srcT TypeStruct, dstSelector, srcSele
 
 func (fm *FuncMaker) sliceAndOther(dstT TypeSlice, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
 	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
-		fmt.Fprintf(tmpFm.buf, "%s = make(%s, 1)\n", dstSelector, fm.formatPkgType(dstT.typ))
+		dt, err := tmpFm.formatPkgType(dstT.typ)
+		if err != nil {
+			return false
+		}
+		fmt.Fprintf(tmpFm.buf, "%s = make(%s, 1)\n", dstSelector, dt)
 		return tmpFm.makeFunc(Type{typ: dstT.typ.Elem()}, src, dstSelector+"[0]", srcSelector, index, history)
 	})
 }
@@ -221,7 +225,12 @@ func (fm *FuncMaker) sliceAndSlice(dstT, srcT TypeSlice, dstSelector, srcSelecto
 	index = nextIndex(index)
 
 	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
-		fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, fm.formatPkgType(dstT.typ), srcSelector)
+		dt, err := tmpFm.formatPkgType(dstT.typ)
+		if err != nil {
+			return false
+		}
+
+		fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, dt, srcSelector)
 		fmt.Fprintf(tmpFm.buf, "for %s := range %s {\n", index, srcSelector)
 		written := tmpFm.makeFunc(Type{typ: dstT.typ.Elem()}, Type{typ: srcT.typ.Elem()},
 			dstSelector+"["+index+"]",
@@ -253,7 +262,10 @@ func (fm *FuncMaker) otherAndNamed(dst Type, srcT TypeNamed, dstSelector, srcSel
 }
 
 func (fm *FuncMaker) namedAndNamed(dstT, srcT TypeNamed, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
-	funcName := fm.getFuncName(dstT.typ, srcT.typ)
+	funcName, err := fm.getFuncName(dstT.typ, srcT.typ)
+	if err != nil {
+		return false
+	}
 	if !fm.isAlreadyExist(funcName) {
 		newFM := &FuncMaker{
 			buf:                new(bytes.Buffer),
@@ -286,7 +298,11 @@ func (fm *FuncMaker) pointerAndOther(dstT TypePointer, src Type, dstSelector, sr
 	return fm.deferWrite(func(tmpFm *FuncMaker) bool {
 		selector := dstSelector
 		dst, dstSelector := fm.pointer(dstT, dstSelector)
-		fmt.Fprintf(tmpFm.buf, "%s = new(%s)\n", selector, tmpFm.formatPkgType(dst.typ))
+		dt, err := tmpFm.formatPkgType(dstT.typ.Elem())
+		if err != nil {
+			return false
+		}
+		fmt.Fprintf(tmpFm.buf, "%s = new(%s)\n", selector, dt)
 		return tmpFm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 	})
 }
@@ -309,7 +325,11 @@ func (fm *FuncMaker) pointerAndPointer(dstT, srcT TypePointer, dstSelector, srcS
 
 		selector := dstSelector
 		dst, dstSelector := fm.pointer(dstT, dstSelector)
-		fmt.Fprintf(tmpFm.buf, "%s = new(%s)\n", selector, tmpFm.formatPkgType(dst.typ))
+		dt, err := tmpFm.formatPkgType(dstT.typ.Elem())
+		if err != nil {
+			return false
+		}
+		fmt.Fprintf(tmpFm.buf, "%s = new(%s)\n", selector, dt)
 		src, srcSelector := fm.pointer(srcT, srcSelector)
 		written := tmpFm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 
