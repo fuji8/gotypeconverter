@@ -2,8 +2,8 @@ name: build
 on: [push, pull_request]
 jobs:
 
-  test-build:
-    name: Test & Build
+  test-build-lint:
+    name: Test & Build & Lint
     runs-on: ubuntu-latest
     steps:
 
@@ -26,5 +26,19 @@ jobs:
       run: |
         go mod tidy -v
         go test -race ./...
+
     - name: Build
       run: go build cmd/gotypeconverter/main.go
+
+    - name: generate on cli
+      run: |
+        cd testdata/src/a
+        ../../../main -s SRC -d DST -o tmp.go .
+        cd
+
+    - name: Lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: latest
+        working-directory: testdata/src/a
+        args: tmp.go a.go
