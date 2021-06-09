@@ -24,6 +24,10 @@ type FuncMaker struct {
 	dstWrittenSelector map[string]struct{}
 }
 
+func (fm *FuncMaker) Pkg() *types.Package {
+	return fm.pkg
+}
+
 func InitFuncMaker(pkg *types.Package) *FuncMaker {
 	fm := &FuncMaker{
 		buf:                new(bytes.Buffer),
