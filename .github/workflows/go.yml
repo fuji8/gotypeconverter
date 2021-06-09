@@ -28,9 +28,3 @@ jobs:
         go test -race ./...
     - name: Build
       run: go build cmd/gotypeconverter/main.go
-    - name: cli test
-      run: |
-        go build cmd/gotypeconverter/main.go
-        cd testdata/src/a
-        ../../../cmd/gotypeconverter/main -s SRC -d DST -o tmp.go .
-        diff tmp.go gotypeconverter.golden
