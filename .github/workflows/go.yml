@@ -41,4 +41,4 @@ jobs:
       with:
         version: latest
         working-directory: testdata/src/a
-      #  args: tmp.go a.go
+        args: tmp.go a.go
