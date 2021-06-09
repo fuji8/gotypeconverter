@@ -43,10 +43,14 @@ func InitFuncMaker(pkg *types.Package) *FuncMaker {
 // MakeFunc make function
 // TODO fix only named type
 func (fm *FuncMaker) MakeFunc(dstType, srcType Type) {
-	dstName := fm.formatPkgType(dstType.typ)
-	srcName := fm.formatPkgType(srcType.typ)
+	dstName, _ := fm.formatPkgType(dstType.typ)
+	srcName, _ := fm.formatPkgType(srcType.typ)
 
-	fm.funcName = fm.getFuncName(dstType.typ, srcType.typ)
+	var err error
+	fm.funcName, err = fm.getFuncName(dstType.typ, srcType.typ)
+	if err != nil {
+		return
+	}
 
 	fmt.Fprintf(fm.buf, "func %s(src %s) (dst %s) {\n",
 		fm.funcName, srcName, dstName)
