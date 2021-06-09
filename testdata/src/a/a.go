@@ -12,7 +12,6 @@ import (
 	"a/samename/foo"
 	"a/slice"
 	"a/structtag"
-	"fmt"
 
 	"github.com/labstack/echo"
 	"github.com/traPtitech/knoQ/domain"
@@ -50,21 +49,4 @@ type DST struct {
 	structtag  structtag.DST
 	cast       cast.Bar
 	ignoretags ignoretags.DST
-}
-
-type A struct {
-	foo int
-}
-
-func castSample() {
-	f := cast.Foo(0)
-	b := cast.Bar(f)
-
-	a := A{}
-	var c struct {
-		foo int
-	}
-	a = c
-
-	fmt.Println(f, b, a, c)
 }
