@@ -17,10 +17,14 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-const doc = "gotypeconverter generates a function that converts two different named types."
+const (
+	doc     = "gotypeconverter generates a function that converts two different named types."
+	version = "v0.1.12"
+)
 
 var (
-	flagOutput string
+	flagOutput  string
+	flagVersion bool
 
 	flagSrc, flagDst, flagPkg, flagStructTag string
 
@@ -34,6 +38,7 @@ func init() {
 	Generator.Flags.StringVar(&flagOutput, "o", "", "output file; if nil, output stdout")
 	Generator.Flags.StringVar(&flagSrc, "s", "", "source type")
 	Generator.Flags.StringVar(&flagDst, "d", "", "destination type")
+	Generator.Flags.BoolVar(&flagVersion, "v", false, "version")
 	Generator.Flags.StringVar(&flagPkg, "pkg", "", "output package; if nil, the directoryName and packageName must be same and will be used")
 	Generator.Flags.StringVar(&flagStructTag, "structTag", "cvt", "")
 }
@@ -78,6 +83,11 @@ func Init() {
 	err := Generator.Flags.Parse(os.Args[1:])
 	if err != nil {
 		panic(err)
+	}
+
+	if flagVersion {
+		fmt.Println(version)
+		os.Exit(0)
 	}
 
 	if Generator.Flags.NArg() == 0 {
