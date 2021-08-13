@@ -174,7 +174,7 @@ func run(pass *codegen.Pass) error {
 	dstType := pass.TypesInfo.TypeOf(dstAST)
 
 	funcMaker := ana.InitFuncMaker(pass.Pkg)
-	funcMaker.MakeFunc(ana.InitType(dstType, flagDst), ana.InitType(srcType, flagSrc))
+	funcMaker.MakeFunc(ana.InitType(dstType, flagDst), ana.InitType(srcType, flagSrc), true)
 
 	if flagOutput == "" {
 		src, err := ui.NoInfoGeneration(funcMaker)
