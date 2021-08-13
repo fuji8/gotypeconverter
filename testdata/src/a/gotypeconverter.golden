@@ -7,14 +7,14 @@ import (
 	"a/ignoretags"
 	"a/named"
 	"a/normal"
-	"a/pointer"
 	"a/samename"
-	"a/samename/foo"
 	"a/slice"
 	"a/structtag"
+	"time"
 
 	"github.com/traPtitech/knoQ/domain"
 	"github.com/traPtitech/knoQ/infra/db"
+	"gorm.io/gorm"
 )
 
 func ConvSRCToDST(src SRC) (dst DST) {
@@ -39,54 +39,185 @@ func ConvSRCToDST(src SRC) (dst DST) {
 }
 
 func convbasicSRCTobasicDST(src basic.SRC) (dst basic.DST) {
-	dst = convbasicSRCTobasicDST(src)
+	dst.Foo = src.Foo
+	dst.X = src.X
 	return
 }
 
 func convcastFooTocastBar(src cast.Foo) (dst cast.Bar) {
-	dst = convcastFooTocastBar(src)
+	dst = cast.Bar(src)
+	return
+}
+func convdbEventAdminTodomainUser(src db.EventAdmin) (dst domain.User) {
+	dst.ID = src.UserID
+	return
+}
+
+func convdbEventTagTodomainEventTag(src db.EventTag) (dst domain.EventTag) {
+	dst.Tag = convdbTagTodomainTag(src.Tag)
+	dst.Locked = src.Locked
 	return
 }
 func convdbEventTodomainEvent(src db.Event) (dst domain.Event) {
-	dst = convdbEventTodomainEvent(src)
+	dst.ID = src.ID
+	dst.Name = src.Name
+	dst.Description = src.Description
+	dst.Room = convdbRoomTodomainRoom(src.Room)
+	dst.Group = convdbGroupTodomainGroup(src.Group)
+	dst.TimeStart = src.TimeStart
+	dst.TimeEnd = src.TimeEnd
+	dst.CreatedBy = convdbUserTodomainUser(src.CreatedBy)
+	dst.Admins = make([]domain.User, len(src.Admins))
+	for i := range src.Admins {
+		dst.Admins[i] = convdbEventAdminTodomainUser(src.Admins[i])
+	}
+	dst.Tags = make([]domain.EventTag, len(src.Tags))
+	for i := range src.Tags {
+		dst.Tags[i] = convdbEventTagTodomainEventTag(src.Tags[i])
+	}
+	dst.AllowTogether = src.AllowTogether
+	dst.Model.CreatedAt = src.Model.CreatedAt
+	dst.Model.UpdatedAt = src.Model.UpdatedAt
+	dst.Model.DeletedAt = new(time.Time)
+	(*dst.Model.DeletedAt) = convgormDeletedAtTotimeTime(src.Model.DeletedAt)
+	return
+}
+
+func convdbGroupAdminTodomainUser(src db.GroupAdmin) (dst domain.User) {
+	dst.ID = src.UserID
+	return
+}
+func convdbGroupMemberTodomainUser(src db.GroupMember) (dst domain.User) {
+	dst.ID = src.UserID
+	return
+}
+func convdbGroupTodomainGroup(src db.Group) (dst domain.Group) {
+	dst.ID = src.ID
+	dst.Name = src.Name
+	dst.Description = src.Description
+	dst.JoinFreely = src.JoinFreely
+	dst.Members = make([]domain.User, len(src.Members))
+	for i := range src.Members {
+		dst.Members[i] = convdbGroupMemberTodomainUser(src.Members[i])
+	}
+	dst.Admins = make([]domain.User, len(src.Admins))
+	for i := range src.Admins {
+		dst.Admins[i] = convdbGroupAdminTodomainUser(src.Admins[i])
+	}
+	dst.CreatedBy = convdbUserTodomainUser(src.CreatedBy)
+	dst.Model.CreatedAt = src.Model.CreatedAt
+	dst.Model.UpdatedAt = src.Model.UpdatedAt
+	dst.Model.DeletedAt = new(time.Time)
+	(*dst.Model.DeletedAt) = convgormDeletedAtTotimeTime(src.Model.DeletedAt)
+	dst.IsTraQGroup = src.Model.DeletedAt.Valid
+	return
+}
+func convdbRoomTodomainRoom(src db.Room) (dst domain.Room) {
+	dst.ID = src.ID
+	dst.Place = src.Place
+	dst.Verified = src.Verified
+	dst.TimeStart = src.TimeStart
+	dst.TimeEnd = src.TimeEnd
+	dst.Events = make([]domain.Event, len(src.Events))
+	for i := range src.Events {
+		dst.Events[i] = convdbEventTodomainEvent(src.Events[i])
+	}
+	dst.CreatedBy = convdbUserTodomainUser(src.CreatedBy)
+	dst.Model.CreatedAt = src.Model.CreatedAt
+	dst.Model.UpdatedAt = src.Model.UpdatedAt
+	dst.Model.DeletedAt = new(time.Time)
+	(*dst.Model.DeletedAt) = convgormDeletedAtTotimeTime(src.Model.DeletedAt)
+	return
+}
+
+func convdbTagTodomainTag(src db.Tag) (dst domain.Tag) {
+	dst.ID = src.ID
+	dst.Name = src.Name
+	dst.Model.CreatedAt = src.Model.CreatedAt
+	dst.Model.UpdatedAt = src.Model.UpdatedAt
+	dst.Model.DeletedAt = new(time.Time)
+	(*dst.Model.DeletedAt) = convgormDeletedAtTotimeTime(src.Model.DeletedAt)
+	return
+}
+func convdbUserTodomainUser(src db.User) (dst domain.User) {
+	dst.ID = src.ID
+	return
+}
+
+func convgormDeletedAtTotimeTime(src gorm.DeletedAt) (dst time.Time) {
+	dst = src.Time
 	return
 }
 
 func convignoretagsSRCToignoretagsDST(src ignoretags.SRC) (dst ignoretags.DST) {
-	dst = convignoretagsSRCToignoretagsDST(src)
+	dst = ignoretags.DST(src)
 	return
 }
 func convnamedSRCTonamedDST(src named.SRC) (dst named.DST) {
-	dst = convnamedSRCTonamedDST(src)
+	dst.Foo = src.Foo
 	return
 }
 
 func convnormalSRCTonormalDST(src normal.SRC) (dst normal.DST) {
-	dst = convnormalSRCTonormalDST(src)
+	dst.E.M = src.M
+	dst.E.X = src.X.A
+	dst.E.Members = make([]uint8, len(src.Members))
+	for i := range src.Members {
+		dst.E.Members[i] = src.Members[i].Uaiueo
+	}
+	dst.X = src.X.C
+	dst.Y = src.Y
+	dst.Z = src.Z
 	return
 }
 
+func convpointerDeleteAtTotimeTime(src pointer.DeleteAt) (dst time.Time) {
+	dst = src.Time
+	return
+}
 func convpointerSRCTopointerDST(src pointer.SRC) (dst pointer.DST) {
-	dst = convpointerSRCTopointerDST(src)
+	dst.ID = src.ID
+	dst.DstRoomGroup.Room = src.Room
+	dst.DstRoomGroup.Group = src.Group
+	dst.DstModel.CreatedAt = src.SrcModel.CreatedAt
+	dst.DstModel.DeleteAt = new(time.Time)
+	(*dst.DstModel.DeleteAt) = convpointerDeleteAtTotimeTime(src.SrcModel.DeleteAt)
 	return
 }
 
 func convsamenameHogeTofooHoge(src samename.Hoge) (dst foo.Hoge) {
-	dst = convsamenameHogeTofooHoge(src)
+	dst.A = src.A
 	return
 }
 
 func convsamenameSRCTofooDST(src samename.SRC) (dst foo.DST) {
-	dst = convsamenameSRCTofooDST(src)
+	dst.Huga = foo.Huga(src.Huga)
 	return
 }
 
 func convsliceSRCTosliceDST(src slice.SRC) (dst slice.DST) {
-	dst = convsliceSRCTosliceDST(src)
+	if len(src.Ns) > 0 {
+		dst.Ns = src.Ns[0]
+	}
+	dst.N = make([]float64, 1)
+	dst.N[0] = src.N
+	if len(src.Arr) > 0 {
+		dst.Arr.Bar = src.Arr[0].Bar
+	}
+	dst.Strs = src.Strs
+	dst.Sarr = make([]struct {
+		Bar int
+		Hii float32
+	}, len(src.Sarr))
+	for i := range src.Sarr {
+		dst.Sarr[i].Bar = src.Sarr[i].Bar
+	}
 	return
 }
 
 func convstructtagSRCTostructtagDST(src structtag.SRC) (dst structtag.DST) {
-	dst = convstructtagSRCTostructtagDST(src)
+	dst.Xxxx = src.X
+	dst.Read = src.Read
+	dst.Write = src.Baz
 	return
 }

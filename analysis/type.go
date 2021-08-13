@@ -279,7 +279,7 @@ func (fm *FuncMaker) namedAndNamed(dstT, srcT TypeNamed, dstSelector, srcSelecto
 		*fm.childFunc = append(*fm.childFunc, newFM)
 		newFM.MakeFunc(Type{typ: dstT.typ, name: dstT.name}, Type{typ: srcT.typ, name: srcT.name}, false)
 	}
-	if funcName == fm.funcName {
+	if tolowerFuncName(funcName) == tolowerFuncName(fm.funcName) {
 		return fm.makeFunc(Type{typ: dstT.typ.Underlying(), name: dstT.typ.String()}, Type{typ: srcT.typ.Underlying(), name: srcT.typ.String()}, dstSelector, srcSelector, index, history)
 	}
 
