@@ -28,7 +28,7 @@ var (
 
 	flagSrc, flagDst, flagPkg, flagStructTag string
 
-	tmpFilePath    string
+	TmpFilePath    string
 	uniqueFuncName string
 
 	ops uint64 = 0
@@ -48,7 +48,7 @@ func CreateTmpFile(path string) {
 
 	// tmpFilePath = path + "/tmp-001.go"
 	rand.Seed(time.Now().UnixNano())
-	tmpFilePath = fmt.Sprintf("%s/tmp%03d.go", path, rand.Int63n(1e3))
+	TmpFilePath = fmt.Sprintf("%s/tmp%03d.go", path, rand.Int63n(1e3))
 	fullPath, err := filepath.Abs(path)
 	if err != nil {
 		panic(err)
@@ -65,13 +65,13 @@ func CreateTmpFile(path string) {
 		uniqueFuncName, flagSrc, flagDst)
 
 	// goimports do not imports from go.mod
-	res, err := imports.Process(tmpFilePath, []byte(src), &imports.Options{
+	res, err := imports.Process(TmpFilePath, []byte(src), &imports.Options{
 		Fragment: true,
 	})
 	if err != nil {
 		panic(err)
 	}
-	err = ioutil.WriteFile(tmpFilePath, res, 0755)
+	err = ioutil.WriteFile(TmpFilePath, res, 0755)
 	if err != nil {
 		panic(err)
 	}
@@ -106,11 +106,11 @@ var Generator = &codegen.Generator{
 }
 
 func run(pass *codegen.Pass) error {
-	ui.TmpFilePath = tmpFilePath[:len(tmpFilePath)-3] + "_generated.go"
+	ui.TmpFilePath = TmpFilePath[:len(TmpFilePath)-3] + "_generated.go"
 
 	// delete tmp file
 	defer func() {
-		os.Remove(tmpFilePath)
+		os.Remove(TmpFilePath)
 	}()
 
 	var srcAST, dstAST ast.Expr

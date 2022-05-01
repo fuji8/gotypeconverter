@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/fuji8/gotypeconverter"
 
 	"github.com/gostaticanalysis/codegen/singlegenerator"
@@ -8,5 +10,8 @@ import (
 
 func main() {
 	gotypeconverter.Init()
-	singlegenerator.Main(gotypeconverter.Generator) // os.Exit
+	defer func() {
+		os.Remove(gotypeconverter.TmpFilePath)
+	}()
+	singlegenerator.Main(gotypeconverter.Generator)
 }
