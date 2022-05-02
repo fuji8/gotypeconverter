@@ -81,6 +81,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: main
+    - run: chmod u+x ./main
 
     - name: generate on cli
       run: |
@@ -96,7 +97,7 @@ jobs:
         args: tmp.go a.go
     
   issues:
-    name: Generation Lint
+    name: issues
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -112,6 +113,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: main
+    - run: chmod u+x ./main
 
     - name: issue-15 + issue-16
       continue-on-error: true
