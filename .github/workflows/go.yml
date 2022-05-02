@@ -45,6 +45,7 @@ jobs:
     
     - name: issue-16 test
       run: |
+        go install github.com/fuji8/gotypeconverter/cmd/gotypeconverter@v0.1.12
         cd testdata/issue/016
-        ../../../main -s SRC -d DST -pkg main .
+        gotypeconverter -s SRC -d DST -pkg main .
         tmp=`ls | wc -w` && test $tmp -eq 1
