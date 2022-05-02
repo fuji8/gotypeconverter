@@ -43,8 +43,13 @@ jobs:
         working-directory: testdata/src/a
         args: tmp.go a.go
     
-    - name: issue-16 test
+    - name: issue-15 + issue-16
+      continue-on-error: true
       run: |
         cd testdata/issue/016
         ../../../main -s SRC -d DST -pkg main .
+        cd
+    - name: issue-16
+      run: | 
+        cd testdata/issue/016
         tmp=`ls | wc -w` && test $tmp -eq 1
