@@ -42,3 +42,9 @@ jobs:
         version: latest
         working-directory: testdata/src/a
         args: tmp.go a.go
+    
+    - name: issue-16 test
+      run: |
+        cd testdata/issue/016
+        ../../../main -s SRC -d DST -pkg main .
+        tmp=`ls | wc -w` && test $tmp -eq 1
