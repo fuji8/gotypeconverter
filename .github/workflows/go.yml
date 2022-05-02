@@ -15,6 +15,10 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v1
+    - run: |
+        git checkout 30b2be5c17bbcd557a4c01217f9ecd5790ca220a
+        
+
     
     - name: go mod vendor for testdata
       run: |
@@ -45,7 +49,6 @@ jobs:
     
     - name: issue-16 test
       run: |
-        go install github.com/fuji8/gotypeconverter/cmd/gotypeconverter@v0.1.12
         cd testdata/issue/016
-        gotypeconverter -s SRC -d DST -pkg main .
+        ../../../main -s SRC -d DST -pkg main .
         tmp=`ls | wc -w` && test $tmp -eq 1
