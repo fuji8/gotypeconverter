@@ -95,7 +95,7 @@ func (fm *FuncMaker) formatPkgString(fullTypeStr string) string {
 	if p == path[len(path)-1] {
 		return typeStr
 	}
-	return fm.pkg.Name() + typeStr
+	return last
 }
 
 func (fm *FuncMaker) formatPkgType(t types.Type) (string, error) {
