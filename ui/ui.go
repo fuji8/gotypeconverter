@@ -14,6 +14,7 @@ import (
 	"golang.org/x/tools/imports"
 )
 
+// TmpFilePath is output tmp file
 var TmpFilePath = "./generated.go"
 
 func sortFunction(data []byte, fileName string) ([]byte, error) {
@@ -48,6 +49,8 @@ func NoInfoGeneration(fm *ana.FuncMaker) (string, error) {
 	fmt.Fprintf(buf, "package %s\n", fm.Pkg().Name())
 
 	buf.Write(fm.WriteBytes())
+
+	fmt.Println("###", buf.String())
 
 	sortedData, err := sortFunction(buf.Bytes(), TmpFilePath)
 	if err != nil {
