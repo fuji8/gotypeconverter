@@ -1,4 +1,4 @@
-package main
+package naim
 
 type SRC struct {
 	Foo int
