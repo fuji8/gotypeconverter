@@ -144,3 +144,8 @@ jobs:
         cd testdata/issue/016
         tmp=`ls | wc -w` && test $tmp -eq 1
         cd
+    - name: issue-29
+      run: |
+        cd testdata/issue/029/hello-world
+        ../../../../main -s SRC -d DST -pkg naim .
+        cd
