@@ -108,11 +108,6 @@ var Generator = &codegen.Generator{
 func run(pass *codegen.Pass) error {
 	ui.TmpFilePath = TmpFilePath[:len(TmpFilePath)-3] + "_generated.go"
 
-	// delete tmp file
-	defer func() {
-		os.Remove(TmpFilePath)
-	}()
-
 	var srcAST, dstAST ast.Expr
 	existTargeFile := false
 	for _, f := range pass.Files {
