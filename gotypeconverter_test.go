@@ -30,25 +30,7 @@ func TestMain(m *testing.M) {
 // codegentest.Golden(t, rs, flagUpdate)
 // }
 
-func TestXXX(t *testing.T) {
-	tmp, err := packages.Load(&packages.Config{
-		Mode: packages.LoadAllSyntax,
-		Dir:  codegentest.TestData() + "/src/a",
-	}, "a")
-	tmp2 := TypeOf4(tmp[0].Types, "", "SRC")
-	fmt.Println(tmp2, err)
-	fmt.Println(tmp2.String())
-}
-
-func TestYYY(t *testing.T) {
-	tmp, err := packages.Load(&packages.Config{
-		Mode: packages.LoadAllSyntax,
-		Dir:  codegentest.TestData() + "/issue/x016",
-	}, "x016")
-	fmt.Println(tmp, err)
-}
-
-func TestZZZ(t *testing.T) {
+func TestGenerator(t *testing.T) {
 	Gen.Flags.Set("s", "SRC")
 	Gen.Flags.Set("d", "DST")
 	ui.TmpFilePath = codegentest.TestData() + "/src/a/tmp.go"
@@ -69,5 +51,4 @@ func TestZZZ(t *testing.T) {
 		gname := "gotypeconverter"
 		t.Errorf("%s's output is different from the golden file(%s):\n%s", gname, fpath, diff)
 	}
-
 }
