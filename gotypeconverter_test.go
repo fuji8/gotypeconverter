@@ -3,11 +3,12 @@ package gotypeconverter
 import (
 	"flag"
 	"fmt"
-	"go/types"
+	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/fuji8/gotypeconverter/ui"
+	"github.com/google/go-cmp/cmp"
 	"github.com/gostaticanalysis/codegen/codegentest"
 	"golang.org/x/tools/go/packages"
 )
@@ -20,46 +21,14 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestGenerator(t *testing.T) {
-	Generator.Flags.Set("s", "SRC")
-	Generator.Flags.Set("d", "DST")
+// func TestGenerator(t *testing.T) {
+// Gen.Flags.Set("s", "SRC")
+// Gen.Flags.Set("d", "DST")
 
-	ui.TmpFilePath = codegentest.TestData() + "/src/a/tmp.go"
-	rs := codegentest.Run(t, codegentest.TestData(), Generator, "a")
-	codegentest.Golden(t, rs, flagUpdate)
-}
-
-func TypeOf4(pkg *types.Package, pkgname, typename string) types.Type {
-	if typename == "" {
-		return nil
-	}
-
-	if typename[0] == '*' {
-		obj := TypeOf4(pkg, pkgname, typename[1:])
-		if obj == nil {
-			return nil
-		}
-		return types.NewPointer(obj)
-	}
-
-	if typename[0] == '[' {
-		obj := TypeOf4(pkg, pkgname, typename[1:])
-		if obj == nil {
-			return nil
-		}
-		return types.NewSlice(obj)
-	}
-	if pkgname == "" {
-		obj := pkg.Scope().Lookup(typename)
-		return obj.Type()
-	}
-
-	obj := pkg.Scope().Lookup(typename)
-	if obj == nil {
-		return nil
-	}
-	return obj.Type()
-}
+// ui.TmpFilePath = codegentest.TestData() + "/src/a/tmp.go"
+// rs := codegentest.Run(t, codegentest.TestData(), Generator, "a")
+// codegentest.Golden(t, rs, flagUpdate)
+// }
 
 func TestXXX(t *testing.T) {
 	tmp, err := packages.Load(&packages.Config{
@@ -77,4 +46,28 @@ func TestYYY(t *testing.T) {
 		Dir:  codegentest.TestData() + "/issue/x016",
 	}, "x016")
 	fmt.Println(tmp, err)
+}
+
+func TestZZZ(t *testing.T) {
+	Gen.Flags.Set("s", "SRC")
+	Gen.Flags.Set("d", "DST")
+	ui.TmpFilePath = codegentest.TestData() + "/src/a/tmp.go"
+
+	pkgs, _ := packages.Load(&packages.Config{
+		Mode: packages.LoadAllSyntax,
+		Dir:  codegentest.TestData() + "/src/a",
+	}, "a")
+	got, _ := run(pkgs)
+
+	fpath := fmt.Sprintf("%s.golden", codegentest.TestData()+"/src/a/gotypeconverter")
+	gf, err := ioutil.ReadFile(fpath)
+	if err != nil {
+		t.Fatal("unexpected error:", err)
+	}
+
+	if diff := cmp.Diff(string(gf), got); diff != "" {
+		gname := "gotypeconverter"
+		t.Errorf("%s's output is different from the golden file(%s):\n%s", gname, fpath, diff)
+	}
+
 }
