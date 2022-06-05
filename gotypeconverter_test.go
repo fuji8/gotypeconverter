@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/fuji8/gotypeconverter/ui"
 	"github.com/gostaticanalysis/codegen/codegentest"
 )
 
@@ -20,7 +21,7 @@ func TestGenerator(t *testing.T) {
 	Generator.Flags.Set("s", "SRC")
 	Generator.Flags.Set("d", "DST")
 
-	CreateTmpFile(codegentest.TestData() + "/src/a")
+	ui.TmpFilePath = codegentest.TestData() + "/src/a/tmp.go"
 	rs := codegentest.Run(t, codegentest.TestData(), Generator, "a")
 	codegentest.Golden(t, rs, flagUpdate)
 }

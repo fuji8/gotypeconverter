@@ -1,20 +1,15 @@
 package gotypeconverter
 
 import (
-	"errors"
 	"fmt"
-	"go/ast"
-	"io/ioutil"
-	"math/rand"
+	"go/types"
 	"os"
-	"path/filepath"
-	"sync/atomic"
-	"time"
+	"strings"
 
 	ana "github.com/fuji8/gotypeconverter/analysis"
 	"github.com/fuji8/gotypeconverter/ui"
 	"github.com/gostaticanalysis/codegen"
-	"golang.org/x/tools/imports"
+	"golang.org/x/tools/go/analysis"
 )
 
 const (
@@ -43,61 +38,6 @@ func init() {
 	Generator.Flags.StringVar(&flagStructTag, "structTag", "cvt", "")
 }
 
-func CreateTmpFile(path string) {
-	ops = 0
-
-	// tmpFilePath = path + "/tmp-001.go"
-	rand.Seed(time.Now().UnixNano())
-	TmpFilePath = fmt.Sprintf("%s/tmp%03d.go", path, rand.Int63n(1e3))
-	fullPath, err := filepath.Abs(path)
-	if err != nil {
-		panic(err)
-	}
-
-	pkg := flagPkg
-	if flagPkg == "" {
-		pkg = filepath.Base(fullPath)
-	}
-
-	src := fmt.Sprintf("package %s\n", pkg)
-	uniqueFuncName = fmt.Sprintf("unique%03d", rand.Int63n(1e3))
-	src += fmt.Sprintf("func %s(){var (a %s\n b %s\n)\nfmt.Println(a, b)}\n",
-		uniqueFuncName, flagSrc, flagDst)
-
-	// goimports do not imports from go.mod
-	res, err := imports.Process(TmpFilePath, []byte(src), &imports.Options{
-		Fragment: true,
-	})
-	if err != nil {
-		panic(err)
-	}
-	err = ioutil.WriteFile(TmpFilePath, res, 0755)
-	if err != nil {
-		panic(err)
-	}
-
-}
-
-// Init 解析のための一時ファイルを作成する
-func Init() {
-	err := Generator.Flags.Parse(os.Args[1:])
-	if err != nil {
-		panic(err)
-	}
-
-	if flagVersion {
-		fmt.Println(version)
-		os.Exit(0)
-	}
-
-	if Generator.Flags.NArg() == 0 {
-		return
-	}
-
-	path := os.Args[len(os.Args)-1]
-	CreateTmpFile(path)
-}
-
 var Generator = &codegen.Generator{
 	Name:             "gotypeconverter",
 	Doc:              doc,
@@ -105,68 +45,75 @@ var Generator = &codegen.Generator{
 	RunDespiteErrors: true,
 }
 
-func run(pass *codegen.Pass) error {
-	ui.TmpFilePath = TmpFilePath[:len(TmpFilePath)-3] + "_generated.go"
+func TypeOf3(pass *analysis.Pass, pkg, name string) types.Type {
+	if name == "" {
+		return nil
+	}
 
-	var srcAST, dstAST ast.Expr
-	existTargeFile := false
-	for _, f := range pass.Files {
-		// TODO read tmp*.go only
-		for _, d := range f.Decls {
-			if fd, ok := d.(*ast.FuncDecl); ok {
-				if fd.Name.Name != uniqueFuncName {
-					continue
-				}
-
-				existTargeFile = true
-
-				//ast.Inspect(fd, func(n ast.Node) bool {
-				//ast.Print(pass.Fset, n)
-				//fmt.Println() // \n したい...
-				//return false
-				//})
-
-				ast.Inspect(fd, func(n ast.Node) bool {
-					if gd, ok := n.(*ast.GenDecl); ok {
-						for _, s := range gd.Specs {
-							s, ok := s.(*ast.ValueSpec)
-							if !ok {
-								return false
-							}
-							switch s.Names[0].Name {
-							case "a":
-								srcAST = s.Type
-							case "b":
-								dstAST = s.Type
-							}
-						}
-					}
-					return true
-				})
-				break
-			}
+	if name[0] == '*' {
+		obj := TypeOf3(pass, pkg, name[1:])
+		if obj == nil {
+			return nil
 		}
-		if existTargeFile {
+		return types.NewPointer(obj)
+	}
+
+	if name[0] == '[' {
+		obj := TypeOf3(pass, pkg, name[1:])
+		if obj == nil {
+			return nil
+		}
+		return types.NewSlice(obj)
+	}
+
+	if pkg == "" {
+		obj := pass.Pkg.Scope().Lookup(name)
+		return obj.Type()
+	}
+
+	var obj types.Object
+	for i := 0; i < pass.Pkg.Scope().NumChildren(); i++ {
+		tpkg, ok := pass.Pkg.Scope().Child(i).Lookup(pkg).(*types.PkgName)
+		if !ok {
+			return nil
+		}
+		obj = tpkg.Imported().Scope().Lookup(name)
+		if obj != nil {
 			break
 		}
 	}
+	return obj.Type()
+}
 
-	if !existTargeFile {
-		// 解析対象のpassでない
-		return nil
+func run(pass *codegen.Pass) error {
+	aPass := analysis.Pass{
+		Analyzer:          pass.Generator.ToAnalyzer(),
+		Fset:              pass.Fset,
+		Files:             pass.Files,
+		OtherFiles:        pass.OtherFiles,
+		IgnoredFiles:      []string{},
+		Pkg:               pass.Pkg,
+		TypesInfo:         pass.TypesInfo,
+		TypesSizes:        pass.TypesSizes,
+		ResultOf:          pass.ResultOf,
+		ImportObjectFact:  pass.ImportObjectFact,
+		ImportPackageFact: pass.ImportPackageFact,
 	}
 
-	if srcAST == nil || dstAST == nil {
-		return errors.New("-s or -d are invalid")
+	srcTstr := strings.Split(flagSrc, ".")
+	var srcType types.Type
+	if len(srcTstr) == 1 {
+		srcType = TypeOf3(&aPass, "", srcTstr[0])
+	} else if len(srcTstr) == 2 {
+		srcType = TypeOf3(&aPass, srcTstr[0], srcTstr[1])
 	}
-	if atomic.LoadUint64(&ops) != 0 {
-		return nil
+	dstTstr := strings.Split(flagDst, ".")
+	var dstType types.Type
+	if len(dstTstr) == 1 {
+		dstType = TypeOf3(&aPass, "", dstTstr[0])
+	} else if len(dstTstr) == 2 {
+		dstType = TypeOf3(&aPass, dstTstr[0], dstTstr[1])
 	}
-	// ファイルを書くのは、一回のみ
-	atomic.AddUint64(&ops, 1)
-
-	srcType := pass.TypesInfo.TypeOf(srcAST)
-	dstType := pass.TypesInfo.TypeOf(dstAST)
 
 	funcMaker := ana.InitFuncMaker(pass.Pkg)
 	funcMaker.MakeFunc(ana.InitType(dstType, flagDst), ana.InitType(srcType, flagSrc))
