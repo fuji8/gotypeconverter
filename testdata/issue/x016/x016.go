@@ -1,4 +1,4 @@
-package main
+package x016
 
 type SRC struct {
 	Foo int
