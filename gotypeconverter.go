@@ -22,11 +22,6 @@ var (
 	flagVersion bool
 
 	flagSrc, flagDst, flagPkg, flagStructTag string
-
-	TmpFilePath    string
-	uniqueFuncName string
-
-	ops uint64 = 0
 )
 
 func init() {
