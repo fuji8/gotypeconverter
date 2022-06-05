@@ -138,4 +138,4 @@ jobs:
     - name: issue-16
       working-directory: testdata/issue/x016
       run: | 
-        tmp=`ls | wc -w` && test $tmp -eq 1
+        tmp=`ls | wc -w` && test $tmp -eq 2
