@@ -87,7 +87,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          ~/test/src/a/vendor
+          ~/testdata/src/a/vendor
         key: ${{ runner.os }}-go-${{ hashFiles('~/test/src/a/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
@@ -135,9 +135,11 @@ jobs:
 
     - name: issue-15 + issue-16
       run: |
-        cd ~/testdata/issue/x016
+        cd 
+        cd testdata/issue/x016
         ../../../main -s SRC -d DST -pkg main .
     - name: issue-16
       run: | 
-        cd ~/testdata/issue/x016
+        cd 
+        cd testdata/issue/x016
         tmp=`ls | wc -w` && test $tmp -eq 1
