@@ -134,7 +134,7 @@ jobs:
     - name: issue-15 + issue-16
       working-directory: testdata/issue/x016
       run: |
-        ../../../main -s SRC -d DST -pkg main .
+        ../../../main -s SRC -d DST .
     - name: issue-16
       working-directory: testdata/issue/x016
       run: | 
