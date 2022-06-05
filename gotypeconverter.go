@@ -21,17 +21,17 @@ const (
 
 var (
 	flagOutput  string
-	flagVersion bool
+	FlagVersion bool
 
-	flagSrc, flagDst, flagPkg, flagStructTag string
+	flagSrc, flagDst, FlagStructTag string
 )
 
 func init() {
 	Gen.Flags.StringVar(&flagOutput, "o", "", "output file; if nil, output stdout")
 	Gen.Flags.StringVar(&flagSrc, "s", "", "source type")
 	Gen.Flags.StringVar(&flagDst, "d", "", "destination type")
-	Gen.Flags.BoolVar(&flagVersion, "v", false, "version")
-	Gen.Flags.StringVar(&flagStructTag, "structTag", "cvt", "")
+	Gen.Flags.BoolVar(&FlagVersion, "v", false, "version")
+	Gen.Flags.StringVar(&FlagStructTag, "structTag", "cvt", "")
 }
 
 // A Generator describes a code generator function and its options.
@@ -133,6 +133,10 @@ func run(pkgs []*packages.Package) (string, error) {
 		}
 	}
 
+	if srcType == nil || dstType == nil {
+		return "", fmt.Errorf("srcType or dstType is nil")
+	}
+
 	funcMaker := ana.InitFuncMaker(pkgs[pkgIdx].Types)
 	funcMaker.MakeFunc(ana.InitType(dstType, flagDst), ana.InitType(srcType, flagSrc))
 
@@ -141,7 +145,6 @@ func run(pkgs []*packages.Package) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		fmt.Print(src)
 		return src, nil
 	}
 

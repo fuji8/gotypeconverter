@@ -134,13 +134,10 @@ jobs:
     - run: chmod u+x ./main
 
     - name: issue-15 + issue-16
-      continue-on-error: true
       run: |
-        cd testdata/issue/016
+        cd ~/testdata/issue/x016
         ../../../main -s SRC -d DST -pkg main .
-        cd
     - name: issue-16
       run: | 
-        cd testdata/issue/016
+        cd ~/testdata/issue/x016
         tmp=`ls | wc -w` && test $tmp -eq 1
-        cd
