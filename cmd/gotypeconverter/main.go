@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/fuji8/gotypeconverter"
@@ -10,6 +11,14 @@ import (
 	"github.com/fuji8/gotypeconverter/ui"
 	"golang.org/x/tools/go/packages"
 )
+
+func getVersion() string {
+	i, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "unknown"
+	}
+	return i.Main.Version
+}
 
 func main() {
 	gotypeconverter.Gen.Flags.Usage = func() {
@@ -28,7 +37,7 @@ func main() {
 		os.Exit(1)
 	}
 	if gotypeconverter.FlagVersion {
-		fmt.Println(gotypeconverter.Gen.Version)
+		fmt.Println(getVersion())
 		os.Exit(0)
 	}
 	if gotypeconverter.Gen.Flags.NArg() == 0 {

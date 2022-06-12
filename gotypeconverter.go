@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	doc     = "gotypeconverter generates a function that converts two different named types."
-	version = "v0.1.12"
+	doc = "gotypeconverter generates a function that converts two different named types."
 )
 
 var (
@@ -40,9 +39,6 @@ type Generator struct {
 	// as it may appear in command-line flags, URLs, and so on.
 	Name string
 
-	// Version
-	Version string
-
 	// Doc is the documentation for the generator.
 	// The part before the first "\n\n" is the title
 	// (no capital or period, max ~60 letters).
@@ -65,10 +61,9 @@ type Generator struct {
 }
 
 var Gen = &Generator{
-	Name:    "gotypeconverter",
-	Doc:     doc,
-	Version: version,
-	Run:     run,
+	Name: "gotypeconverter",
+	Doc:  doc,
+	Run:  run,
 }
 
 func TypeOf4(pkg *types.Package, pkgname, typename string) types.Type {
