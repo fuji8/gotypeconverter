@@ -139,3 +139,7 @@ jobs:
       working-directory: testdata/issue/x016
       run: | 
         tmp=`ls | wc -w` && test $tmp -eq 2
+    - name: issue-29
+      working-directory: testdata/issue/029/hello-world
+      run: |
+        ../../../../main -s SRC -d DST -pkg naim .
