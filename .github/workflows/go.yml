@@ -142,4 +142,4 @@ jobs:
     - name: issue-29
       working-directory: testdata/issue/029/hello-world
       run: |
-        ../../../../main -s SRC -d DST -pkg naim .
+        ../../../../main -s SRC -d DST .
