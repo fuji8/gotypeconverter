@@ -14,9 +14,3 @@ require (
 	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 )
-
-replace (
-	github.com/gostaticanalysis/codegen => github.com/fuji8/codegen v0.1.1-0.20220501161814-8186a8cd04d8
-	golang.org/x/tools => github.com/fuji8/tools v0.1.11-0.20220501160630-8a0bea4d5aba
-
-)
