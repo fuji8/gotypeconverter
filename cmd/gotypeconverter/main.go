@@ -53,7 +53,8 @@ func main() {
 	pkgs, _ := packages.Load(&packages.Config{
 		Mode: packages.LoadAllSyntax,
 		Dir:  path,
-	}, ".")
-	got, _ := gotypeconverter.Gen.Run(pkgs)
-	fmt.Println(got)
+	}, "")
+	fmt.Println("pkgs: ", pkgs)
+	_, err = gotypeconverter.Gen.Run(pkgs)
+	fmt.Println("run: ", err)
 }
