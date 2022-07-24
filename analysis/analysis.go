@@ -83,13 +83,13 @@ func (fm *FuncMaker) samePkg(pkg *types.Package) bool {
 // TODO fix
 func (fm *FuncMaker) formatPkgString(fullTypeStr string) string {
 	// TODO fix only pointer, slice and basic
-	re := regexp.MustCompile(`[\w-_\./]*/`)
-	last := string(re.ReplaceAll([]byte(fullTypeStr), []byte("")))
+	fullTypeStrSlush := strings.Split(fullTypeStr, "/")
+	last := fullTypeStrSlush[len(fullTypeStrSlush)-1]
 
 	tmp := strings.Split(last, ".")
 	p := string(regexp.MustCompile(`\[\]|\*`).ReplaceAll([]byte(tmp[0]), []byte("")))
 
-	re = regexp.MustCompile(`[\w-]*\.`)
+	re := regexp.MustCompile(`[\w-]*\.`)
 	typeStr := string(re.ReplaceAll([]byte(last), []byte("")))
 	path := strings.Split(fm.pkg.Path(), "/")
 	if p == path[len(path)-1] {
