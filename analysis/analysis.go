@@ -83,7 +83,7 @@ func (fm *FuncMaker) samePkg(pkg *types.Package) bool {
 // TODO fix
 func (fm *FuncMaker) formatPkgString(fullTypeStr string) string {
 	// TODO fix only pointer, slice and basic
-	re := regexp.MustCompile(`[\w\./]*/`)
+	re := regexp.MustCompile(`[\w-_\./]*/`)
 	last := string(re.ReplaceAll([]byte(fullTypeStr), []byte("")))
 
 	tmp := strings.Split(last, ".")
