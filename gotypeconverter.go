@@ -91,11 +91,17 @@ func TypeOf4(pkg *types.Package, pkgname, typename string) types.Type {
 		return obj.Type()
 	}
 
-	obj := pkg.Scope().Lookup(typename)
-	if obj == nil {
-		return nil
+	for i := 0; i < pkg.Scope().NumChildren(); i++ {
+		pkgN, ok := pkg.Scope().Child(i).Lookup(pkgname).(*types.PkgName)
+		if ok {
+			obj := pkgN.Imported().Scope().Lookup(typename)
+			if obj == nil {
+				return nil
+			}
+			return obj.Type()
+		}
 	}
-	return obj.Type()
+	return nil
 }
 
 func splitToPkgAndType(s string) (string, string) {

@@ -50,6 +50,8 @@ func NoInfoGeneration(fm *ana.FuncMaker) (string, error) {
 
 	buf.Write(fm.WriteBytes())
 
+	fmt.Println(buf.String())
+
 	sortedData, err := sortFunction(buf.Bytes(), TmpFilePath)
 	if err != nil {
 		return "", err
