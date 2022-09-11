@@ -129,7 +129,7 @@ func run(pkgs []*packages.Package) (string, error) {
 	}
 
 	if srcType == nil || dstType == nil {
-		return "", fmt.Errorf("srcType or dstType is nil")
+		return "", fmt.Errorf("srcType or dstType is nil, srcType: %s, dstType: %s", srcType, dstType)
 	}
 
 	funcMaker := ana.InitFuncMaker(pkgs[pkgIdx].Types)
