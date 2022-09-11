@@ -277,13 +277,13 @@ func (fm *FuncMaker) namedAndNamed(dstT, srcT TypeNamed, dstSelector, srcSelecto
 		newFM.childFunc = &tmp
 
 		*fm.childFunc = append(*fm.childFunc, newFM)
-		newFM.MakeFunc(Type{typ: dstT.typ, name: dstT.name}, Type{typ: srcT.typ, name: srcT.name})
+		newFM.MakeFunc(Type{typ: dstT.typ, name: dstT.name}, Type{typ: srcT.typ, name: srcT.name}, false)
 	}
-	if funcName == fm.funcName {
+	if tolowerFuncName(funcName) == tolowerFuncName(fm.funcName) {
 		return fm.makeFunc(Type{typ: dstT.typ.Underlying(), name: dstT.typ.String()}, Type{typ: srcT.typ.Underlying(), name: srcT.typ.String()}, dstSelector, srcSelector, index, history)
 	}
 
-	fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, funcName, srcSelector)
+	fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, tolowerFuncName(funcName), srcSelector)
 	fm.dstWrittenSelector[dstSelector] = struct{}{}
 	return true
 }

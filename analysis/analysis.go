@@ -31,6 +31,10 @@ func (fm *FuncMaker) getFuncName(dstType, srcType types.Type) (string, error) {
 	return fmt.Sprintf("Conv%sTo%s", srcName, dstName), err
 }
 
+func tolowerFuncName(funcName string) string {
+	return strings.ToLower(funcName[:1]) + funcName[1:]
+}
+
 func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
 	// 1. rootまで遡る。
 	var root *FuncMaker
@@ -46,7 +50,7 @@ func (fm *FuncMaker) isAlreadyExist(funcName string) bool {
 	// 2. 存在しているか見る。
 	var inspectSamaFuncName func(*FuncMaker) bool
 	inspectSamaFuncName = func(fm *FuncMaker) bool {
-		if fm.funcName == funcName {
+		if tolowerFuncName(funcName) == tolowerFuncName(fm.funcName) {
 			return true
 		}
 		if fm.childFunc != nil {
