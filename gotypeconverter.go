@@ -80,7 +80,7 @@ func TypeOf4(pkg *types.Package, pkgname, typename string) types.Type {
 	}
 
 	if typename[0] == '[' {
-		obj := TypeOf4(pkg, pkgname, typename[1:])
+		obj := TypeOf4(pkg, pkgname, typename[2:])
 		if obj == nil {
 			return nil
 		}
