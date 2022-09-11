@@ -14,6 +14,7 @@ import (
 	"golang.org/x/tools/imports"
 )
 
+// TmpFilePath is output tmp file
 var TmpFilePath = "./generated.go"
 
 func sortFunction(data []byte, fileName string) ([]byte, error) {

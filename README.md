@@ -1,4 +1,4 @@
-# gotypeconverter [![](https://github.com/fuji8/gotypeconverter/workflows/build/badge.svg)](https://github.com/fuji8/gotypeconverter/actions)
+# gotypeconverter [![](https://github.com/fuji8/gotypeconverter/workflows/build/badge.svg)](https://github.com/fuji8/gotypeconverter/actions) [![CodeQL](https://github.com/fuji8/gotypeconverter/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/fuji8/gotypeconverter/actions/workflows/codeql-analysis.yml)
 gotypeconverter generates a function that converts two structurally different types.
 
 [日本語（原本）](https://github.com/fuji8/gotypeconverter/blob/main/README_JA.md)
