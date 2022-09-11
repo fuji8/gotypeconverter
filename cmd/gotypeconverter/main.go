@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"runtime/debug"
 	"strings"
@@ -53,7 +54,10 @@ func main() {
 	pkgs, _ := packages.Load(&packages.Config{
 		Mode: packages.LoadAllSyntax,
 		Dir:  path,
-	}, ".")
-	got, _ := gotypeconverter.Gen.Run(pkgs)
+	}, "")
+	got, err := gotypeconverter.Gen.Run(pkgs)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println(got)
 }
