@@ -92,7 +92,7 @@ func (fm *FuncMaker) structAndOther(dstT TypeStruct, src Type, dstSelector, srcS
 			history,
 		)
 
-		written = float64(1/len(fields)) * score
+		written = 1 / float64(len(fields)) * score
 		if written > 0 {
 			break
 		}
@@ -122,7 +122,7 @@ func (fm *FuncMaker) otherAndStruct(dst Type, srcT TypeStruct, dstSelector, srcS
 			history,
 		)
 
-		written = float64(1/len(fields)) * score
+		written = 1 / float64(len(fields)) * score
 		if written > 0 {
 			break
 		}
