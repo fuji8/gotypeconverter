@@ -291,7 +291,7 @@ func (fm *FuncMaker) pointer(pointerT TypePointer, selector string) (Type, strin
 }
 
 func (fm *FuncMaker) pointerAndOther(dstT TypePointer, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
-	selector := dstSelector
+	preDstselector := dstSelector
 	dst, dstSelector := fm.pointer(dstT, dstSelector)
 	score, conv := fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 	if score == 0 {
@@ -303,13 +303,14 @@ func (fm *FuncMaker) pointerAndOther(dstT TypePointer, src Type, dstSelector, sr
 		return 0, ""
 	}
 	convs := []string{
-		fmt.Sprintf("%s = new(%s)", selector, dt),
+		fmt.Sprintf("%s = new(%s)", preDstselector, dt),
 		conv,
 	}
 	return score, strings.Join(convs, "\n")
 }
 
 func (fm *FuncMaker) otherAndPointer(dst Type, srcT TypePointer, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
+	preSrcSelector := srcSelector
 	src, srcSelector := fm.pointer(srcT, srcSelector)
 	score, conv := fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 	if score == 0 {
@@ -317,7 +318,7 @@ func (fm *FuncMaker) otherAndPointer(dst Type, srcT TypePointer, dstSelector, sr
 	}
 
 	convs := []string{
-		fmt.Sprintf("if %s != nil {", srcSelector),
+		fmt.Sprintf("if %s != nil {", preSrcSelector),
 		conv,
 		"}",
 	}
@@ -325,10 +326,9 @@ func (fm *FuncMaker) otherAndPointer(dst Type, srcT TypePointer, dstSelector, sr
 }
 
 func (fm *FuncMaker) pointerAndPointer(dstT, srcT TypePointer, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
-
-	selector := dstSelector
+	preDstselector := dstSelector
 	dst, dstSelector := fm.pointer(dstT, dstSelector)
-
+	preSrcSelector := srcSelector
 	src, srcSelector := fm.pointer(srcT, srcSelector)
 	score, conv := fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 	if score == 0 {
@@ -341,8 +341,8 @@ func (fm *FuncMaker) pointerAndPointer(dstT, srcT TypePointer, dstSelector, srcS
 
 	convs := []string{
 
-		fmt.Sprintf("if %s != nil {", srcSelector),
-		fmt.Sprintf("%s = new(%s)", selector, dt),
+		fmt.Sprintf("if %s != nil {", preSrcSelector),
+		fmt.Sprintf("%s = new(%s)", preDstselector, dt),
 		conv,
 		fmt.Sprintf("}"),
 	}
