@@ -55,7 +55,7 @@ func getFields(t *types.Struct) ([]*types.Var, []string) {
 	tags := make([]string, 0)
 	for i := 0; i < t.NumFields(); i++ {
 		if t.Field(i).Embedded() {
-			if tE, ok := t.Field(i).Type().(*types.Struct); ok {
+			if tE, ok := t.Field(i).Type().Underlying().(*types.Struct); ok {
 				f, t := getFields(tE)
 				fields = append(fields, f...)
 				tags = append(tags, t...)
