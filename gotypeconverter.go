@@ -139,7 +139,7 @@ func run(pkgs []*packages.Package) (string, error) {
 	}
 
 	funcMaker := ana.InitFuncMaker(pkgs[pkgIdx].Types)
-	funcMaker.MakeFunc(ana.InitType(dstType, flagDst), ana.InitType(srcType, flagSrc), true)
+	ana.Buf.WriteString("\n" + funcMaker.MakeFunc(ana.InitType(dstType, flagDst), ana.InitType(srcType, flagSrc), true))
 
 	if flagOutput == "" {
 		src, err := ui.NoInfoGeneration(funcMaker)

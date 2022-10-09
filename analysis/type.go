@@ -196,7 +196,7 @@ func (fm *FuncMaker) sliceAndOther(dstT TypeSlice, src Type, dstSelector, srcSel
 		return 0, ""
 	}
 	convs := []string{
-		fmt.Sprintf("%s = make(%s, 1)\n", dstSelector, dt),
+		fmt.Sprintf("%s = make(%s, 1)", dstSelector, dt),
 		conv,
 	}
 	return score / M, strings.Join(convs, "\n")
@@ -208,7 +208,7 @@ func (fm *FuncMaker) otherAndSlice(dst Type, srcT TypeSlice, dstSelector, srcSel
 		return 0, ""
 	}
 	convs := []string{
-		fmt.Sprintf("if len(%s)>0 {\n", srcSelector),
+		fmt.Sprintf("if len(%s)>0 {", srcSelector),
 		conv,
 		"}",
 	}
@@ -234,8 +234,8 @@ func (fm *FuncMaker) sliceAndSlice(dstT, srcT TypeSlice, dstSelector, srcSelecto
 	}
 
 	convs := []string{
-		fmt.Sprintf("%s = make(%s, len(%s))\n", dstSelector, dt, srcSelector),
-		fmt.Sprintf("for %s := range %s {\n", index, srcSelector),
+		fmt.Sprintf("%s = make(%s, len(%s))", dstSelector, dt, srcSelector),
+		fmt.Sprintf("for %s := range %s {", index, srcSelector),
 		conv,
 		"}",
 	}
@@ -273,7 +273,7 @@ func (fm *FuncMaker) namedAndNamed(dstT, srcT TypeNamed, dstSelector, srcSelecto
 		newFM.childFunc = &tmp
 
 		*fm.childFunc = append(*fm.childFunc, newFM)
-		newFM.MakeFunc(Type{typ: dstT.typ, name: dstT.name}, Type{typ: srcT.typ, name: srcT.name}, false)
+		Buf.WriteString("\n" + newFM.MakeFunc(Type{typ: dstT.typ, name: dstT.name}, Type{typ: srcT.typ, name: srcT.name}, false))
 	}
 	if tolowerFuncName(funcName) == tolowerFuncName(fm.funcName) {
 		return fm.makeFunc(Type{typ: dstT.typ.Underlying(), name: dstT.typ.String()}, Type{typ: srcT.typ.Underlying(), name: srcT.typ.String()}, dstSelector, srcSelector, index, history)
@@ -303,7 +303,7 @@ func (fm *FuncMaker) pointerAndOther(dstT TypePointer, src Type, dstSelector, sr
 		return 0, ""
 	}
 	convs := []string{
-		fmt.Sprintf("%s = new(%s)\n", selector, dt),
+		fmt.Sprintf("%s = new(%s)", selector, dt),
 		conv,
 	}
 	return score, strings.Join(convs, "\n")
@@ -317,7 +317,7 @@ func (fm *FuncMaker) otherAndPointer(dst Type, srcT TypePointer, dstSelector, sr
 	}
 
 	convs := []string{
-		fmt.Sprintf("if %s != nil {\n", srcSelector),
+		fmt.Sprintf("if %s != nil {", srcSelector),
 		conv,
 		"}",
 	}
@@ -341,10 +341,10 @@ func (fm *FuncMaker) pointerAndPointer(dstT, srcT TypePointer, dstSelector, srcS
 
 	convs := []string{
 
-		fmt.Sprintf("if %s != nil {\n", srcSelector),
-		fmt.Sprintf("%s = new(%s)\n", selector, dt),
+		fmt.Sprintf("if %s != nil {", srcSelector),
+		fmt.Sprintf("%s = new(%s)", selector, dt),
 		conv,
-		fmt.Sprintf("}\n"),
+		fmt.Sprintf("}"),
 	}
 
 	return score, strings.Join(convs, "\n")

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/types"
-	"html/template"
+	"text/template"
 )
 
 func selectorGen(selector string, field *types.Var) string {
@@ -14,7 +14,6 @@ func selectorGen(selector string, field *types.Var) string {
 // FuncMaker generate function
 type FuncMaker struct {
 	funcName string
-	buf      *bytes.Buffer
 	// output package
 	pkg *types.Package
 
@@ -30,8 +29,8 @@ func (fm *FuncMaker) Pkg() *types.Package {
 }
 
 func InitFuncMaker(pkg *types.Package) *FuncMaker {
+	Buf = new(bytes.Buffer)
 	fm := &FuncMaker{
-		buf:                new(bytes.Buffer),
 		pkg:                pkg,
 		dstWrittenSelector: map[string]struct{}{},
 	}
@@ -66,23 +65,20 @@ func (fm *FuncMaker) MakeFunc(dstType, srcType Type, export bool) string {
 		"body": conv,
 	}
 	templ := `func {{.fn.name}} (src {{.fn.srcType}}) (dst {{.fn.dstType}}) {
-	{{.body}}
+{{.body}}
+return
 }`
-	var b bytes.Buffer
-	template.Must(template.New("").Parse(templ)).Execute(&b, v)
+	b := new(bytes.Buffer)
+	template.Must(template.New("").Parse(templ)).Execute(b, v)
 
-	fm.buf.Write(b.Bytes())
 	return b.String()
 }
 
+var Buf *bytes.Buffer
+
 // WriteBytes 全ての関数を書き出す。
 func (fm *FuncMaker) WriteBytes() (out []byte) {
-	out = fm.buf.Bytes()
-	if fm.childFunc != nil {
-		for _, child := range *fm.childFunc {
-			out = append(out, child.WriteBytes()...)
-		}
-	}
+	out = Buf.Bytes()
 	return
 }
 
