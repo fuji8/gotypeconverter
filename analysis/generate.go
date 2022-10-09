@@ -72,7 +72,7 @@ func (fm *FuncMaker) WriteBytes() (out []byte) {
 	return
 }
 
-func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
+func (fm *FuncMaker) deferWrite(f func(*FuncMaker) float64) float64 {
 	tmpFm := &FuncMaker{
 		funcName:   fm.funcName,
 		buf:        new(bytes.Buffer),
@@ -84,7 +84,7 @@ func (fm *FuncMaker) deferWrite(f func(*FuncMaker) bool) bool {
 	}
 
 	written := f(tmpFm)
-	if written {
+	if written > 0 {
 		fm.buf.Write(tmpFm.buf.Bytes())
 		// fm.childFunc = tmpFm.childFunc
 		fm.dstWrittenSelector = tmpFm.dstWrittenSelector
@@ -99,13 +99,13 @@ func nextIndex(index string) string {
 	return string(index[0] + 1)
 }
 
-func (fm *FuncMaker) makeFunc(dst, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) bool {
+func (fm *FuncMaker) makeFunc(dst, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
 	if fm.dstWritten(dstSelector) {
-		return false
+		return 0
 	}
 
 	if checkHistory(dst.typ, src.typ, history) {
-		return false
+		return 0
 	}
 	history = append(history, [2]types.Type{dst.typ, src.typ})
 
@@ -117,7 +117,7 @@ func (fm *FuncMaker) makeFunc(dst, src Type, dstSelector, srcSelector, index str
 		}
 
 		fm.dstWrittenSelector[dstSelector] = struct{}{}
-		return true
+		return 1
 	}
 
 	switch dstT := dst.typ.(type) {
@@ -218,5 +218,5 @@ func (fm *FuncMaker) makeFunc(dst, src Type, dstSelector, srcSelector, index str
 
 	}
 
-	return false
+	return 0
 }
