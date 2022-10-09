@@ -1,10 +1,12 @@
 package analysis
 
 import (
-	"bytes"
 	"fmt"
 	"go/types"
+	"strings"
 )
+
+const M = 100
 
 func InitType(typ types.Type, name string) Type {
 	return Type{
@@ -47,180 +49,195 @@ type TypeNamed struct {
 	name string
 }
 
-func (fm *FuncMaker) structAndOther(dstT TypeStruct, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
-	var written float64 = 0
-	for i := 0; i < dstT.typ.NumFields(); i++ {
-		if !fm.varVisiable(dstT.typ.Field(i)) {
+// getFields embed を含めて、フィールドを取得
+func getFields(t *types.Struct) ([]*types.Var, []string) {
+	fields := make([]*types.Var, 0)
+	tags := make([]string, 0)
+	for i := 0; i < t.NumFields(); i++ {
+		if t.Field(i).Embedded() {
+			if tE, ok := t.Field(i).Type().(*types.Struct); ok {
+				f, t := getFields(tE)
+				fields = append(fields, f...)
+				tags = append(tags, t...)
+				continue
+			}
+		}
+		fields = append(fields, t.Field(i))
+		tags = append(tags, t.Tag(i))
+	}
+
+	return fields, tags
+}
+
+func (fm *FuncMaker) structAndOther(dstT TypeStruct, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
+	var written float64
+	var conv string
+	fields, tags := getFields(dstT.typ)
+	for i, f := range fields {
+		if !fm.varVisiable(f) {
 			continue
 		}
 
 		// if struct tag "cvt" exists, use struct tag
-		_, _, _, dOption := getTag(dstT.typ.Tag(i))
+		_, _, _, dOption := getTag(tags[i])
 		if dOption == Ignore || dOption == ReadOnly {
 			continue
 		}
 
-		written += float64(1/dstT.typ.NumFields()) * fm.makeFunc(Type{typ: dstT.typ.Field(i).Type()}, src,
-			selectorGen(dstSelector, dstT.typ.Field(i)),
+		var score float64
+		score, conv = fm.makeFunc(Type{typ: f.Type()}, src,
+			selectorGen(dstSelector, f),
 			srcSelector,
 			index,
 			history,
 		)
+
+		written = float64(1/len(fields)) * score
 		if written > 0 {
 			break
 		}
 	}
-	return written
+	return written, conv
 }
 
-func (fm *FuncMaker) otherAndStruct(dst Type, srcT TypeStruct, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
-	var written float64 = 0
-	for j := 0; j < srcT.typ.NumFields(); j++ {
-		if !fm.varVisiable(srcT.typ.Field(j)) {
+func (fm *FuncMaker) otherAndStruct(dst Type, srcT TypeStruct, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
+	var written float64
+	var conv string
+	fields, tags := getFields(srcT.typ)
+	for j, f := range fields {
+		if !fm.varVisiable(f) {
 			continue
 		}
 		// if struct tag "cvt" exists, use struct tag
-		_, _, _, sOption := getTag(srcT.typ.Tag(j))
+		_, _, _, sOption := getTag(tags[j])
 		if sOption == Ignore || sOption == WriteOnly {
 			continue
 		}
 
-		written += float64(1/srcT.typ.NumFields()) * fm.makeFunc(dst, Type{typ: srcT.typ.Field(j).Type()},
+		var score float64
+		score, conv = fm.makeFunc(dst, Type{typ: f.Type()},
 			dstSelector,
-			selectorGen(srcSelector, srcT.typ.Field(j)),
+			selectorGen(srcSelector, f),
 			index,
 			history,
 		)
+
+		written = float64(1/len(fields)) * score
 		if written > 0 {
 			break
 		}
 	}
-	return written
+	return written, conv
 }
 
-func (fm *FuncMaker) structAndStruct(dstT, srcT TypeStruct, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
+func (fm *FuncMaker) structAndStruct(dstT, srcT TypeStruct, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
 	var written float64 = 0
-
+	convs := make([]string, 0)
 	// field 同士の比較
-
-	for i := 0; i < dstT.typ.NumFields(); i++ {
-		if !fm.varVisiable(dstT.typ.Field(i)) {
+	dFields, dtags := getFields(dstT.typ)
+	sFields, stags := getFields(srcT.typ)
+	for i, df := range dFields {
+		if !fm.varVisiable(df) {
 			continue
 		}
 		// if struct tag "cvt" exists, use struct tag
-		dField, _, dWriteField, dOption := getTag(dstT.typ.Tag(i))
+		dField, _, dWriteField, dOption := getTag(dtags[i])
 		if dWriteField != "" {
 			dField = dWriteField
 		}
 		if dField == "" {
-			dField = dstT.typ.Field(i).Name()
+			dField = df.Name()
 		}
 		if dOption == Ignore || dOption == ReadOnly {
 			continue
 		}
-
-		if dstT.typ.Field(i).Embedded() {
-			written += float64(1/dstT.typ.NumFields()) * fm.makeFunc(Type{typ: dstT.typ.Field(i).Type()}, Type{typ: srcT.typ, name: srcT.name},
-				selectorGen(dstSelector, dstT.typ.Field(i)),
-				srcSelector,
-				index,
-				history,
-			)
-			continue
-		}
-		for j := 0; j < srcT.typ.NumFields(); j++ {
-			if !fm.varVisiable(srcT.typ.Field(j)) {
+		for j, sf := range sFields {
+			if !fm.varVisiable(sf) {
 				continue
 			}
 			// if struct tag "cvt" exists, use struct tag
-			sField, sReadField, _, sOption := getTag(srcT.typ.Tag(j))
+			sField, sReadField, _, sOption := getTag(stags[j])
 			if sReadField != "" {
 				sField = sReadField
 			}
 			if sField == "" {
-				sField = srcT.typ.Field(j).Name()
+				sField = sf.Name()
 			}
 			if sOption == Ignore || sOption == WriteOnly {
 				continue
 			}
 
-			if srcT.typ.Field(j).Embedded() {
-				continue
-			}
-
-			if dField == sField {
-				written += float64(1/dstT.typ.NumFields()) * fm.makeFunc(Type{typ: dstT.typ.Field(i).Type()}, Type{typ: srcT.typ.Field(j).Type()},
-					selectorGen(dstSelector, dstT.typ.Field(i)),
-					selectorGen(srcSelector, srcT.typ.Field(j)),
+			if df.Name() == sf.Name() {
+				score, conv := fm.makeFunc(Type{typ: df.Type()}, Type{typ: sf.Type()},
+					selectorGen(dstSelector, df),
+					selectorGen(srcSelector, sf),
 					index,
 					history,
 				)
+				written += float64(1/len(dFields)) * score
+				convs = append(convs, conv)
 			}
 		}
 	}
 
-	for j := 0; j < srcT.typ.NumFields(); j++ {
-		if srcT.typ.Field(j).Embedded() {
-			_, _, _, sOption := getTag(srcT.typ.Tag(j))
-			if sOption == Ignore || sOption == WriteOnly {
-				continue
-			}
+	return written, strings.Join(convs, "\n")
+}
 
-			written = float64(1/dstT.typ.NumFields()) * fm.makeFunc(Type{typ: dstT.typ, name: dstT.name}, Type{typ: srcT.typ.Field(j).Type()},
-				dstSelector,
-				selectorGen(srcSelector, srcT.typ.Field(j)),
-				index,
-				history,
-			)
-		}
+func (fm *FuncMaker) sliceAndOther(dstT TypeSlice, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
+	score, conv := fm.makeFunc(Type{typ: dstT.typ.Elem()}, src, dstSelector+"[0]", srcSelector, index, history)
+	if score == 0 {
+		return 0, ""
+	}
+	dt, err := fm.formatPkgType(dstT.typ)
+	if err != nil {
+		return 0, ""
+	}
+	convs := []string{
+		fmt.Sprintf("%s = make(%s, 1)\n", dstSelector, dt),
+		conv,
+	}
+	return score / M, strings.Join(convs, "\n")
+}
+
+func (fm *FuncMaker) otherAndSlice(dst Type, srcT TypeSlice, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
+	score, conv := fm.makeFunc(dst, Type{typ: srcT.typ.Elem()}, dstSelector, srcSelector+"[0]", index, history)
+	if score == 0 {
+		return 0, ""
+	}
+	convs := []string{
+		fmt.Sprintf("if len(%s)>0 {\n", srcSelector),
+		conv,
+		"}",
 	}
 
-	return written
+	return score / M, strings.Join(convs, "\n")
 }
 
-func (fm *FuncMaker) sliceAndOther(dstT TypeSlice, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
-	return fm.deferWrite(func(tmpFm *FuncMaker) float64 {
-		dt, err := tmpFm.formatPkgType(dstT.typ)
-		if err != nil {
-			return 0
-		}
-		fmt.Fprintf(tmpFm.buf, "%s = make(%s, 1)\n", dstSelector, dt)
-		return tmpFm.makeFunc(Type{typ: dstT.typ.Elem()}, src, dstSelector+"[0]", srcSelector, index, history)
-	})
-}
-
-func (fm *FuncMaker) otherAndSlice(dst Type, srcT TypeSlice, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
-	return fm.deferWrite(func(tmpFm *FuncMaker) float64 {
-		fmt.Fprintf(tmpFm.buf, "if len(%s)>0 {\n", srcSelector)
-		written := tmpFm.makeFunc(dst, Type{typ: srcT.typ.Elem()}, dstSelector, srcSelector+"[0]", index, history)
-		fmt.Fprintln(tmpFm.buf, "}")
-		return written
-	})
-}
-
-func (fm *FuncMaker) sliceAndSlice(dstT, srcT TypeSlice, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
+func (fm *FuncMaker) sliceAndSlice(dstT, srcT TypeSlice, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
 	index = nextIndex(index)
 
-	return fm.deferWrite(func(tmpFm *FuncMaker) float64 {
-		dt, err := tmpFm.formatPkgType(dstT.typ)
-		if err != nil {
-			return 0
-		}
+	score, conv := fm.makeFunc(Type{typ: dstT.typ.Elem()}, Type{typ: srcT.typ.Elem()},
+		dstSelector+"["+index+"]",
+		srcSelector+"["+index+"]",
+		index,
+		history,
+	)
+	if score == 0 {
+		return 0, ""
+	}
+	dt, err := fm.formatPkgType(dstT.typ)
+	if err != nil {
+		return 0, ""
+	}
 
-		fmt.Fprintf(tmpFm.buf, "%s = make(%s, len(%s))\n", dstSelector, dt, srcSelector)
-		fmt.Fprintf(tmpFm.buf, "for %s := range %s {\n", index, srcSelector)
-		written := tmpFm.makeFunc(Type{typ: dstT.typ.Elem()}, Type{typ: srcT.typ.Elem()},
-			dstSelector+"["+index+"]",
-			srcSelector+"["+index+"]",
-			index,
-			history,
-		)
-		fmt.Fprintf(tmpFm.buf, "}\n")
-		if written > 0 {
-			tmpFm.dstWrittenSelector[dstSelector] = struct{}{}
-		}
-		return written
-	})
+	convs := []string{
+		fmt.Sprintf("%s = make(%s, len(%s))\n", dstSelector, dt, srcSelector),
+		fmt.Sprintf("for %s := range %s {\n", index, srcSelector),
+		conv,
+		"}",
+	}
+
+	return score, strings.Join(convs, "\n")
 }
 
 func (fm *FuncMaker) named(namedT TypeNamed, selector string) (Type, string) {
@@ -228,24 +245,23 @@ func (fm *FuncMaker) named(namedT TypeNamed, selector string) (Type, string) {
 	return Type{typ: namedT.typ.Underlying(), name: namedT.typ.String()}, selector
 }
 
-func (fm *FuncMaker) namedAndOther(dstT TypeNamed, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
+func (fm *FuncMaker) namedAndOther(dstT TypeNamed, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
 	dst, dstSelector := fm.named(dstT, dstSelector)
 	return fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 }
 
-func (fm *FuncMaker) otherAndNamed(dst Type, srcT TypeNamed, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
+func (fm *FuncMaker) otherAndNamed(dst Type, srcT TypeNamed, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
 	src, srcSelector := fm.named(srcT, srcSelector)
 	return fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
 }
 
-func (fm *FuncMaker) namedAndNamed(dstT, srcT TypeNamed, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
+func (fm *FuncMaker) namedAndNamed(dstT, srcT TypeNamed, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
 	funcName, err := fm.getFuncName(dstT.typ, srcT.typ)
 	if err != nil {
-		return 0
+		return 0, ""
 	}
 	if !fm.isAlreadyExist(funcName) {
 		newFM := &FuncMaker{
-			buf:                new(bytes.Buffer),
 			pkg:                fm.pkg,
 			parentFunc:         fm,
 			dstWrittenSelector: map[string]struct{}{},
@@ -260,9 +276,9 @@ func (fm *FuncMaker) namedAndNamed(dstT, srcT TypeNamed, dstSelector, srcSelecto
 		return fm.makeFunc(Type{typ: dstT.typ.Underlying(), name: dstT.typ.String()}, Type{typ: srcT.typ.Underlying(), name: srcT.typ.String()}, dstSelector, srcSelector, index, history)
 	}
 
-	fmt.Fprintf(fm.buf, "%s = %s(%s)\n", dstSelector, tolowerFuncName(funcName), srcSelector)
+	conv := fmt.Sprintf("%s = %s(%s)\n", dstSelector, tolowerFuncName(funcName), srcSelector)
 	fm.dstWrittenSelector[dstSelector] = struct{}{}
-	return 1
+	return 1, conv
 }
 
 // TODO fix pointer
@@ -271,46 +287,62 @@ func (fm *FuncMaker) pointer(pointerT TypePointer, selector string) (Type, strin
 	return Type{typ: pointerT.typ.Elem()}, fmt.Sprintf("(*%s)", selector)
 }
 
-func (fm *FuncMaker) pointerAndOther(dstT TypePointer, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
-	return fm.deferWrite(func(tmpFm *FuncMaker) float64 {
-		selector := dstSelector
-		dst, dstSelector := fm.pointer(dstT, dstSelector)
-		dt, err := tmpFm.formatPkgType(dstT.typ.Elem())
-		if err != nil {
-			return 0
-		}
-		fmt.Fprintf(tmpFm.buf, "%s = new(%s)\n", selector, dt)
-		return tmpFm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
-	})
+func (fm *FuncMaker) pointerAndOther(dstT TypePointer, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
+	selector := dstSelector
+	dst, dstSelector := fm.pointer(dstT, dstSelector)
+	score, conv := fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+	if score == 0 {
+		return 0, ""
+	}
+
+	dt, err := fm.formatPkgType(dstT.typ.Elem())
+	if err != nil {
+		return 0, ""
+	}
+	convs := []string{
+		fmt.Sprintf("%s = new(%s)\n", selector, dt),
+		conv,
+	}
+	return score, strings.Join(convs, "\n")
 }
 
-func (fm *FuncMaker) otherAndPointer(dst Type, srcT TypePointer, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
-	return fm.deferWrite(func(tmpFm *FuncMaker) float64 {
-		fmt.Fprintf(tmpFm.buf, "if %s != nil {\n", srcSelector)
+func (fm *FuncMaker) otherAndPointer(dst Type, srcT TypePointer, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
+	src, srcSelector := fm.pointer(srcT, srcSelector)
+	score, conv := fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+	if score == 0 {
+		return 0, ""
+	}
 
-		src, srcSelector := fm.pointer(srcT, srcSelector)
-		written := tmpFm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
-
-		fmt.Fprintf(tmpFm.buf, "}\n")
-		return written
-	})
+	convs := []string{
+		fmt.Sprintf("if %s != nil {\n", srcSelector),
+		conv,
+		"}",
+	}
+	return score, strings.Join(convs, "\n")
 }
 
-func (fm *FuncMaker) pointerAndPointer(dstT, srcT TypePointer, dstSelector, srcSelector, index string, history [][2]types.Type) float64 {
-	return fm.deferWrite(func(tmpFm *FuncMaker) float64 {
-		fmt.Fprintf(tmpFm.buf, "if %s != nil {\n", srcSelector)
+func (fm *FuncMaker) pointerAndPointer(dstT, srcT TypePointer, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
 
-		selector := dstSelector
-		dst, dstSelector := fm.pointer(dstT, dstSelector)
-		dt, err := tmpFm.formatPkgType(dstT.typ.Elem())
-		if err != nil {
-			return 0
-		}
-		fmt.Fprintf(tmpFm.buf, "%s = new(%s)\n", selector, dt)
-		src, srcSelector := fm.pointer(srcT, srcSelector)
-		written := tmpFm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+	selector := dstSelector
+	dst, dstSelector := fm.pointer(dstT, dstSelector)
 
-		fmt.Fprintf(tmpFm.buf, "}\n")
-		return written
-	})
+	src, srcSelector := fm.pointer(srcT, srcSelector)
+	score, conv := fm.makeFunc(dst, src, dstSelector, srcSelector, index, history)
+	if score == 0 {
+		return 0, ""
+	}
+	dt, err := fm.formatPkgType(dstT.typ.Elem())
+	if err != nil {
+		return 0, ""
+	}
+
+	convs := []string{
+
+		fmt.Sprintf("if %s != nil {\n", srcSelector),
+		fmt.Sprintf("%s = new(%s)\n", selector, dt),
+		conv,
+		fmt.Sprintf("}\n"),
+	}
+
+	return score, strings.Join(convs, "\n")
 }
