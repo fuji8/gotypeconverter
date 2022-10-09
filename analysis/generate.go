@@ -31,6 +31,7 @@ func (fm *FuncMaker) Pkg() *types.Package {
 
 func InitFuncMaker(pkg *types.Package) *FuncMaker {
 	fm := &FuncMaker{
+		buf:                new(bytes.Buffer),
 		pkg:                pkg,
 		dstWrittenSelector: map[string]struct{}{},
 	}
@@ -70,7 +71,7 @@ func (fm *FuncMaker) MakeFunc(dstType, srcType Type, export bool) string {
 	var b bytes.Buffer
 	template.Must(template.New("").Parse(templ)).Execute(&b, v)
 
-	fmt.Fprint(fm.buf, b.String())
+	fm.buf.Write(b.Bytes())
 	return b.String()
 }
 
@@ -109,7 +110,7 @@ func maxScore(s ...scoreConv) (float64, string) {
 	Mi := -1
 	for i, v := range s {
 		if v.score > score {
-			score = score
+			score = v.score
 			Mi = i
 		}
 	}
@@ -132,9 +133,9 @@ func (fm *FuncMaker) makeFunc(dst, src Type, dstSelector, srcSelector, index str
 	if types.IdenticalIgnoreTags(dst.typ, src.typ) {
 		var conv string
 		if dst.name != "" && dst.name != src.name {
-			conv = fmt.Sprintf("%s = %s(%s)\n", dstSelector, fm.formatPkgString(dst.name), srcSelector)
+			conv = fmt.Sprintf("%s = %s(%s)", dstSelector, fm.formatPkgString(dst.name), srcSelector)
 		} else {
-			conv = fmt.Sprintf("%s = %s\n", dstSelector, srcSelector)
+			conv = fmt.Sprintf("%s = %s", dstSelector, srcSelector)
 		}
 
 		fm.dstWrittenSelector[dstSelector] = struct{}{}

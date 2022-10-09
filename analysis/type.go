@@ -167,14 +167,17 @@ func (fm *FuncMaker) structAndStruct(dstT, srcT TypeStruct, dstSelector, srcSele
 				continue
 			}
 
-			if df.Name() == sf.Name() {
+			if dField == sField {
 				score, conv := fm.makeFunc(Type{typ: df.Type()}, Type{typ: sf.Type()},
 					selectorGen(dstSelector, df),
 					selectorGen(srcSelector, sf),
 					index,
 					history,
 				)
-				written += float64(1/len(dFields)) * score
+				if score == 0 {
+					continue
+				}
+				written += 1 / float64(len(dFields)) * score
 				convs = append(convs, conv)
 			}
 		}
@@ -276,7 +279,7 @@ func (fm *FuncMaker) namedAndNamed(dstT, srcT TypeNamed, dstSelector, srcSelecto
 		return fm.makeFunc(Type{typ: dstT.typ.Underlying(), name: dstT.typ.String()}, Type{typ: srcT.typ.Underlying(), name: srcT.typ.String()}, dstSelector, srcSelector, index, history)
 	}
 
-	conv := fmt.Sprintf("%s = %s(%s)\n", dstSelector, tolowerFuncName(funcName), srcSelector)
+	conv := fmt.Sprintf("%s = %s(%s)", dstSelector, tolowerFuncName(funcName), srcSelector)
 	fm.dstWrittenSelector[dstSelector] = struct{}{}
 	return 1, conv
 }
