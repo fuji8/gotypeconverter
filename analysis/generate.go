@@ -13,7 +13,6 @@ func selectorGen(selector string, field *types.Var) string {
 
 func selectorGen2(selector string, field *types.Var, addSelector string) string {
 	if addSelector != "" {
-
 		return selectorGen(fmt.Sprintf("%s.%s", selector, addSelector), field)
 	}
 	return selectorGen(selector, field)
