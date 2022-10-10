@@ -357,7 +357,7 @@ func (fm *FuncMaker) pointerAndPointer(dstT, srcT TypePointer, dstSelector, srcS
 		fmt.Sprintf("if %s != nil {", preSrcSelector),
 		fmt.Sprintf("%s = new(%s)", preDstselector, dt),
 		conv,
-		fmt.Sprintf("}"),
+		fmt.Sprint("}"),
 	}
 
 	return score, strings.Join(convs, "\n")

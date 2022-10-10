@@ -138,6 +138,7 @@ func run(pkgs []*packages.Package) (string, error) {
 		return "", fmt.Errorf("srcType or dstType is nil, srcType: %s, dstType: %s", srcType, dstType)
 	}
 
+	// TODO fix: データの持ち方
 	funcMaker := ana.InitFuncMaker(pkgs[pkgIdx].Types)
 	ana.Buf.WriteString("\n" + funcMaker.MakeFunc(ana.InitType(dstType, flagDst), ana.InitType(srcType, flagSrc), true))
 
