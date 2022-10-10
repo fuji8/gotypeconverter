@@ -186,6 +186,7 @@ func convsamenameHogeTofooHoge(src samename.Hoge) (dst foo.Hoge) {
 }
 func convsamenameSRCTofooDST(src samename.SRC) (dst foo.DST) {
 	dst.Huga.C = src.Huga.C
+	dst.Huga.Hoge.A = src.Huga.Hoge.A
 	return
 }
 func convsliceSRCTosliceDST(src slice.SRC) (dst slice.DST) {
