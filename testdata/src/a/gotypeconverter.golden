@@ -8,6 +8,7 @@ import (
 	"a/named"
 	"a/normal"
 	"a/samename"
+	"a/samename/foo"
 	"a/slice"
 	"a/structtag"
 	"time"
@@ -37,7 +38,6 @@ func ConvSRCToDST(src SRC) (dst DST) {
 	dst.ignoretags = convignoretagsSRCToignoretagsDST(src.ignoretags)
 	return
 }
-
 func convbasicSRCTobasicDST(src basic.SRC) (dst basic.DST) {
 	dst.Foo = src.Foo
 	dst.X = src.X
@@ -82,7 +82,6 @@ func convdbEventTodomainEvent(src db.Event) (dst domain.Event) {
 	(*dst.Model.DeletedAt) = convgormDeletedAtTotimeTime(src.Model.DeletedAt)
 	return
 }
-
 func convdbGroupAdminTodomainUser(src db.GroupAdmin) (dst domain.User) {
 	dst.ID = src.UserID
 	return
@@ -91,6 +90,7 @@ func convdbGroupMemberTodomainUser(src db.GroupMember) (dst domain.User) {
 	dst.ID = src.UserID
 	return
 }
+
 func convdbGroupTodomainGroup(src db.Group) (dst domain.Group) {
 	dst.ID = src.ID
 	dst.Name = src.Name
@@ -109,7 +109,6 @@ func convdbGroupTodomainGroup(src db.Group) (dst domain.Group) {
 	dst.Model.UpdatedAt = src.Model.UpdatedAt
 	dst.Model.DeletedAt = new(time.Time)
 	(*dst.Model.DeletedAt) = convgormDeletedAtTotimeTime(src.Model.DeletedAt)
-	dst.IsTraQGroup = src.Model.DeletedAt.Valid
 	return
 }
 func convdbRoomTodomainRoom(src db.Room) (dst domain.Room) {
@@ -143,7 +142,6 @@ func convdbUserTodomainUser(src db.User) (dst domain.User) {
 	dst.ID = src.ID
 	return
 }
-
 func convgormDeletedAtTotimeTime(src gorm.DeletedAt) (dst time.Time) {
 	dst = src.Time
 	return
@@ -157,7 +155,6 @@ func convnamedSRCTonamedDST(src named.SRC) (dst named.DST) {
 	dst.Foo = src.Foo
 	return
 }
-
 func convnormalSRCTonormalDST(src normal.SRC) (dst normal.DST) {
 	dst.E.M = src.M
 	dst.E.X = src.X.A
@@ -170,7 +167,6 @@ func convnormalSRCTonormalDST(src normal.SRC) (dst normal.DST) {
 	dst.Z = src.Z
 	return
 }
-
 func convpointerDeleteAtTotimeTime(src pointer.DeleteAt) (dst time.Time) {
 	dst = src.Time
 	return
@@ -184,17 +180,15 @@ func convpointerSRCTopointerDST(src pointer.SRC) (dst pointer.DST) {
 	(*dst.DstModel.DeleteAt) = convpointerDeleteAtTotimeTime(src.SrcModel.DeleteAt)
 	return
 }
-
 func convsamenameHogeTofooHoge(src samename.Hoge) (dst foo.Hoge) {
 	dst.A = src.A
 	return
 }
-
 func convsamenameSRCTofooDST(src samename.SRC) (dst foo.DST) {
-	dst.Huga = foo.Huga(src.Huga)
+	dst.Huga.C = src.Huga.C
+	dst.Huga.Hoge.A = src.Huga.Hoge.A
 	return
 }
-
 func convsliceSRCTosliceDST(src slice.SRC) (dst slice.DST) {
 	if len(src.Ns) > 0 {
 		dst.Ns = src.Ns[0]
@@ -214,7 +208,6 @@ func convsliceSRCTosliceDST(src slice.SRC) (dst slice.DST) {
 	}
 	return
 }
-
 func convstructtagSRCTostructtagDST(src structtag.SRC) (dst structtag.DST) {
 	dst.Xxxx = src.X
 	dst.Read = src.Read

@@ -10,6 +10,7 @@ import (
 	"github.com/fuji8/gotypeconverter/ui"
 	"github.com/google/go-cmp/cmp"
 	"github.com/gostaticanalysis/codegen/codegentest"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -38,15 +39,16 @@ func TestGenerator(t *testing.T) {
 	pkgs, _ := packages.Load(&packages.Config{
 		Mode: packages.LoadAllSyntax,
 		Dir:  codegentest.TestData() + "/src/a",
-	}, "a")
-	got, _ := run(pkgs)
+	}, "")
+	got, err := run(pkgs)
+	require.NoError(t, err)
 
 	fpath := fmt.Sprintf("%s.golden", codegentest.TestData()+"/src/a/gotypeconverter")
 	gf, err := ioutil.ReadFile(fpath)
 	if err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-
+	//fmt.Println(got)
 	if diff := cmp.Diff(string(gf), got); diff != "" {
 		gname := "gotypeconverter"
 		t.Errorf("%s's output is different from the golden file(%s):\n%s", gname, fpath, diff)

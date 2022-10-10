@@ -13,6 +13,7 @@ type Hoge struct {
 
 type Huga struct {
 	C int
+	Hoge
 }
 
 type SRC struct {

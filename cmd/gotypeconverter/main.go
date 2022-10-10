@@ -59,5 +59,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(got)
+	fmt.Print(got)
 }
