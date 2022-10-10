@@ -214,4 +214,3 @@ func convstructtagSRCTostructtagDST(src structtag.SRC) (dst structtag.DST) {
 	dst.Write = src.Baz
 	return
 }
-
