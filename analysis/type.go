@@ -63,7 +63,7 @@ func getFields(t *types.Struct) ([]*types.Var, []string, []string) {
 				addSelectors = append(addSelectors, func(s []string) []string {
 					for j := range s {
 						if s[j] != "" {
-							s[j] = t.Field(i).Name() + "" + s[j]
+							s[j] = t.Field(i).Name() + "." + s[j]
 						} else {
 							s[j] = t.Field(i).Name()
 						}
