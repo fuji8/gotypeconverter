@@ -50,29 +50,42 @@ type TypeNamed struct {
 }
 
 // getFields embed を含めて、フィールドを取得
-func getFields(t *types.Struct) ([]*types.Var, []string) {
+func getFields(t *types.Struct) ([]*types.Var, []string, []string) {
 	fields := make([]*types.Var, 0)
 	tags := make([]string, 0)
+	addSelectors := make([]string, 0)
 	for i := 0; i < t.NumFields(); i++ {
 		if t.Field(i).Embedded() {
 			if tE, ok := t.Field(i).Type().Underlying().(*types.Struct); ok {
-				f, t := getFields(tE)
+				f, tt, s := getFields(tE)
 				fields = append(fields, f...)
-				tags = append(tags, t...)
+				tags = append(tags, tt...)
+				addSelectors = append(addSelectors, func(s []string) []string {
+					for j := range s {
+						if s[j] != "" {
+							s[j] = t.Field(i).Name() + "" + s[j]
+						} else {
+							s[j] = t.Field(i).Name()
+						}
+
+					}
+					return s
+				}(s)...)
 				continue
 			}
 		}
 		fields = append(fields, t.Field(i))
 		tags = append(tags, t.Tag(i))
+		addSelectors = append(addSelectors, "")
 	}
 
-	return fields, tags
+	return fields, tags, addSelectors
 }
 
 func (fm *FuncMaker) structAndOther(dstT TypeStruct, src Type, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
 	var written float64
 	var conv string
-	fields, tags := getFields(dstT.typ)
+	fields, tags, addSelectors := getFields(dstT.typ)
 	for i, f := range fields {
 		if !fm.varVisiable(f) {
 			continue
@@ -86,13 +99,13 @@ func (fm *FuncMaker) structAndOther(dstT TypeStruct, src Type, dstSelector, srcS
 
 		var score float64
 		score, conv = fm.makeFunc(Type{typ: f.Type()}, src,
-			selectorGen(dstSelector, f),
+			selectorGen2(dstSelector, f, addSelectors[i]),
 			srcSelector,
 			index,
 			history,
 		)
 
-		written = 1 / float64(len(fields)) * score
+		written = (1 / float64(len(fields))) * score
 		if written > 0 {
 			break
 		}
@@ -103,7 +116,7 @@ func (fm *FuncMaker) structAndOther(dstT TypeStruct, src Type, dstSelector, srcS
 func (fm *FuncMaker) otherAndStruct(dst Type, srcT TypeStruct, dstSelector, srcSelector, index string, history [][2]types.Type) (float64, string) {
 	var written float64
 	var conv string
-	fields, tags := getFields(srcT.typ)
+	fields, tags, addSelectors := getFields(srcT.typ)
 	for j, f := range fields {
 		if !fm.varVisiable(f) {
 			continue
@@ -117,12 +130,12 @@ func (fm *FuncMaker) otherAndStruct(dst Type, srcT TypeStruct, dstSelector, srcS
 		var score float64
 		score, conv = fm.makeFunc(dst, Type{typ: f.Type()},
 			dstSelector,
-			selectorGen(srcSelector, f),
+			selectorGen2(srcSelector, f, addSelectors[j]),
 			index,
 			history,
 		)
 
-		written = 1 / float64(len(fields)) * score
+		written = (1 / float64(len(fields))) * score
 		if written > 0 {
 			break
 		}
@@ -134,8 +147,8 @@ func (fm *FuncMaker) structAndStruct(dstT, srcT TypeStruct, dstSelector, srcSele
 	var written float64 = 0
 	convs := make([]string, 0)
 	// field 同士の比較
-	dFields, dtags := getFields(dstT.typ)
-	sFields, stags := getFields(srcT.typ)
+	dFields, dtags, addDSelectors := getFields(dstT.typ)
+	sFields, stags, addSSelectors := getFields(srcT.typ)
 	for i, df := range dFields {
 		if !fm.varVisiable(df) {
 			continue
@@ -169,8 +182,8 @@ func (fm *FuncMaker) structAndStruct(dstT, srcT TypeStruct, dstSelector, srcSele
 
 			if dField == sField {
 				score, conv := fm.makeFunc(Type{typ: df.Type()}, Type{typ: sf.Type()},
-					selectorGen(dstSelector, df),
-					selectorGen(srcSelector, sf),
+					selectorGen2(dstSelector, df, addDSelectors[i]),
+					selectorGen2(srcSelector, sf, addSSelectors[j]),
 					index,
 					history,
 				)

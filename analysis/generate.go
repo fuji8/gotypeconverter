@@ -11,6 +11,14 @@ func selectorGen(selector string, field *types.Var) string {
 	return fmt.Sprintf("%s.%s", selector, field.Name())
 }
 
+func selectorGen2(selector string, field *types.Var, addSelector string) string {
+	if addSelector != "" {
+
+		return selectorGen(fmt.Sprintf("%s.%s", selector, addSelector), field)
+	}
+	return selectorGen(selector, field)
+}
+
 // FuncMaker generate function
 type FuncMaker struct {
 	funcName string
